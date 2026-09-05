@@ -1,0 +1,39 @@
+/**
+ * Design tokens for the resident document-request experience.
+ * If your portal already defines a navy/gold theme elsewhere, replace the
+ * values below with your existing tokens rather than maintaining two sources.
+ */
+:root {
+  --brgy-navy: #10213f;
+  --brgy-navy-light: #1b3a63;
+  --brgy-gold: #b9932e;
+  --brgy-gold-soft: #e8d9ae;
+  --brgy-paper: #f6f3ec;
+  --brgy-paper-raised: #ffffff;
+  --brgy-ink: #1e1b16;
+  --brgy-ink-muted: #5b5548;
+  --brgy-line: #d8cfbb;
+
+  --brgy-status-processing: #8a6d1d;
+  --brgy-status-ready: #3f6b4b;
+  --brgy-status-rejected: #9b4030;
+
+  --brgy-font-display: "Spectral", "Iowan Old Style", "Georgia", serif;
+  --brgy-font-body:
+    "Public Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --brgy-radius-sm: 4px;
+  --brgy-radius-md: 8px;
+}
+
+/*
+  Fonts: install locally for production instead of a runtime Google Fonts
+  request, e.g.
+    npm install @fontsource/spectral @fontsource/public-sans
+  then import the weights you use in main.js:
+    import '@fontsource/spectral/500.css'
+    import '@fontsource/spectral/600.css'
+    import '@fontsource/public-sans/400.css'
+    import '@fontsource/public-sans/500.css'
+    import '@fontsource/public-sans/600.css'
+*/
