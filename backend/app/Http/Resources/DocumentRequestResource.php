@@ -12,8 +12,8 @@ class DocumentRequestResource extends JsonResource
         return [
             'id' => $this->uuid,
             'tracking_number' => $this->tracking_number,
-            'status' => $this->status->value,
-            'status_label' => $this->status->label(),
+            'status' => $this->status?->value ?? 'pending',
+            'status_label' => $this->status?->label() ?? 'Pending',
             'purpose' => $this->purpose,
             'details' => $this->details ?? [],
 
@@ -21,14 +21,14 @@ class DocumentRequestResource extends JsonResource
 
             'requested_by' => $this->when(
                 $request->user()?->can('viewAny', \App\Models\DocumentRequest::class),
-                fn () => [
+                fn() => [
                     'id' => $this->user?->id,
                     'name' => $this->user?->name,
                 ]
             ),
 
             'fee' => (float) $this->fee,
-            'payment_status' => $this->payment_status->value,
+            'payment_status' => $this->payment_status?->value ?? 'unpaid',
 
             'remarks' => $this->when(
                 $request->user()?->can('viewAny', \App\Models\DocumentRequest::class),
@@ -36,7 +36,7 @@ class DocumentRequestResource extends JsonResource
             ),
             'rejection_reason' => $this->rejection_reason,
 
-            'attachments' => $this->attachments->map(fn ($attachment) => [
+            'attachments' => $this->attachments->map(fn($attachment) => [
                 'id' => $attachment->id,
                 'label' => $attachment->label,
                 'original_name' => $attachment->original_name,

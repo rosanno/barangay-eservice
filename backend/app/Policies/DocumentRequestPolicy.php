@@ -7,17 +7,22 @@ use App\Models\User;
 
 class DocumentRequestPolicy
 {
+    private function isStaffOrAdmin(User $user): bool
+    {
+        return in_array($user->role, ['admin', 'staff'], true);
+    }
+
     /**
      * Staff/admin listing of ALL requests (used to also gate "sensitive" resource fields).
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'staff']);
+        return $this->isStaffOrAdmin($user);
     }
 
     public function view(User $user, DocumentRequest $documentRequest): bool
     {
-        return $user->id === $documentRequest->user_id || $user->hasAnyRole(['admin', 'staff']);
+        return $user->id === $documentRequest->user_id || $this->isStaffOrAdmin($user);
     }
 
     public function create(User $user): bool
@@ -32,6 +37,6 @@ class DocumentRequestPolicy
 
     public function updateStatus(User $user, DocumentRequest $documentRequest): bool
     {
-        return $user->hasAnyRole(['admin', 'staff']);
+        return $this->isStaffOrAdmin($user);
     }
 }

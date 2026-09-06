@@ -178,7 +178,7 @@
             </v-avatar>
           </div>
         </template>
-        <v-list density="compact" width="160">
+        <v-list density="compact" width="160" class="tight-menu">
           <v-list-item
             title="Profile"
             prepend-icon="mdi-account-outline"
@@ -277,6 +277,22 @@ async function handleLogout() {
 </script>
 
 <style scoped>
+.tight-menu :deep(.v-list-item-title) {
+  font-size: 13px;
+}
+
+.tight-menu :deep(.v-list-item__prepend) {
+  margin-inline-end: -20px; /* default is much larger — pull the title in */
+}
+
+.tight-menu :deep(.v-list-item__prepend .v-icon) {
+  font-size: 16px;
+}
+
+:deep(.v-list-item-title) {
+  font-size: 12px;
+}
+
 .nav-group-label {
   font-size: 10px;
   font-weight: 600;
