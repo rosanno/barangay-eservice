@@ -116,7 +116,28 @@ function signOut() {
             <span class="topbar__icon-dot" aria-hidden="true" />
           </button>
 
-          <div class="topbar__avatar">{{ initials }}</div>
+          <div class="topbar__avatar-wrapper">
+            <v-menu location="bottom end">
+              <template #activator="{ props }">
+                <button type="button" class="topbar__avatar" v-bind="props">
+                  {{ initials }}
+                </button>
+              </template>
+
+              <v-list density="compact" min-width="180">
+                <v-list-item to="/profile" prepend-icon="mdi-account-outline">
+                  <v-list-item-title>Profile</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/settings" prepend-icon="mdi-cog-outline">
+                  <v-list-item-title>Settings</v-list-item-title>
+                </v-list-item>
+                <v-divider />
+                <v-list-item prepend-icon="mdi-logout" @click="signOut">
+                  <v-list-item-title>Sign out</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
         </div>
       </header>
 
@@ -128,6 +149,10 @@ function signOut() {
 </template>
 
 <style scoped>
+:deep(.v-list-item-title) {
+  font-size: 12px;
+}
+
 .resident-shell {
   display: flex;
   min-height: 100vh;
@@ -335,6 +360,9 @@ function signOut() {
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 700;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .resident-shell__main {
