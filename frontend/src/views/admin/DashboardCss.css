@@ -1,0 +1,63 @@
+.appt-date-badge {
+  width: 38px;
+  height: 38px;
+  background: #0f1e3d;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.appt-day {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f5a623;
+  line-height: 1;
+}
+.appt-mon {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Status chips ──────────────────────────────────────────────────── */
+.status-chip {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 10px;
+  display: inline-block;
+  white-space: nowrap;
+}
+.status-pending {
+  background: #fff3e0;
+  color: #a05e00;
+}
+.status-approved {
+  background: #e8f5e9;
+  color: #1b6e34;
+}
+.status-processing {
+  background: #e8f0fe;
+  color: #1a5fd8;
+}
+.status-ready {
+  background: #fff9ed;
+  color: #a07020;
+  border: 1px solid #f5a62350;
+}
+.status-rejected {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+/* ── Vuetify table overrides ───────────────────────────────────────── */
+:deep(.v-table__wrapper table) {
+  border-collapse: collapse;
+  width: 100%;
+}
+:deep(.v-table .v-table__wrapper > table > tbody > tr:hover td) {
+  background: #faf9f6 !important;
+}
