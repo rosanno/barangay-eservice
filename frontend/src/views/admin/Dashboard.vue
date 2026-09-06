@@ -64,7 +64,18 @@
           </div>
 
           <v-card-text class="px-5 pt-4 pb-5">
-            <v-table density="compact">
+            <div v-if="loadingRequests" class="d-flex justify-center py-8">
+              <v-progress-circular indeterminate size="22" color="#0f1e3d" />
+            </div>
+
+            <p
+              v-else-if="!recentRequests.length"
+              style="font-size: 13px; color: #999; padding: 12px 0"
+            >
+              No document requests yet.
+            </p>
+
+            <v-table v-else density="compact">
               <thead>
                 <tr>
                   <th
@@ -119,8 +130,8 @@
                   </td>
                   <!-- Status -->
                   <td style="padding: 10px 8px">
-                    <span class="status-chip" :class="`status-${req.status.toLowerCase()}`">
-                      {{ req.status }}
+                    <span class="status-chip" :class="req.statusClass">
+                      {{ req.statusLabel }}
                     </span>
                   </td>
                   <!-- Date -->
@@ -236,9 +247,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
 
-// ── Stat cards ──────────────────────────────────────────────────────
 const stats = [
   {
     label: 'Total requests',
@@ -274,49 +285,65 @@ const stats = [
   },
 ]
 
-// ── Recent requests ─────────────────────────────────────────────────
-const recentRequests = [
-  {
-    id: 1,
-    resident: 'Maria Reyes',
-    type: 'Barangay Clearance',
-    status: 'Pending',
-    date: 'Jun 9',
-    avatarBg: '#e8f0fe',
-    avatarText: '#1a5fd8',
-  },
-  {
-    id: 2,
-    resident: 'Juan Dela Cruz',
-    type: 'Certificate of Residency',
-    status: 'Approved',
-    date: 'Jun 9',
-    avatarBg: '#e8f5e9',
-    avatarText: '#27ae60',
-  },
-  {
-    id: 3,
-    resident: 'Ana Santos',
-    type: 'Business Clearance',
-    status: 'Processing',
-    date: 'Jun 8',
-    avatarBg: '#fff3e0',
-    avatarText: '#e67e22',
-  },
-  {
-    id: 4,
-    resident: 'Pedro Lopez',
-    type: 'Barangay Clearance',
-    status: 'Ready',
-    date: 'Jun 7',
-    avatarBg: '#fff9ed',
-    avatarText: '#a07020',
-  },
-]
-
+// ── Recent requests (now real) ─────────────────────────────────────
+const recentRequests = ref([])
+const loadingRequests = ref(true)
 const tableColumns = ['Resident', 'Document type', 'Status', 'Date']
 
-// ── Appointments ────────────────────────────────────────────────────
+// Backend status values -> this table's label + CSS class. The template's
+// original mock used labels like "Approved" that don't exist in the real
+// status set, so this maps each real value onto the closest existing chip
+// style (adjust freely, or add new .status-* classes for released/cancelled
+// if you want them visually distinct from ready/rejected).
+const STATUS_META = {
+  pending: { label: 'Pending', class: 'status-pending' },
+  processing: { label: 'Processing', class: 'status-processing' },
+  ready_for_pickup: { label: 'Ready', class: 'status-ready' },
+  released: { label: 'Released', class: 'status-approved' },
+  rejected: { label: 'Rejected', class: 'status-rejected' },
+  cancelled: { label: 'Cancelled', class: 'status-rejected' },
+}
+
+// Cycled by index so avatars still look varied without the backend having
+// to supply colors — same visual effect as the old hardcoded palette.
+const AVATAR_PALETTE = [
+  { bg: '#e8f0fe', text: '#1a5fd8' },
+  { bg: '#e8f5e9', text: '#27ae60' },
+  { bg: '#fff3e0', text: '#e67e22' },
+  { bg: '#fff9ed', text: '#a07020' },
+]
+
+async function loadRecentRequests() {
+  loadingRequests.value = true
+  try {
+    const { data } = await fetchAdminDocumentRequests({ per_page: 5 })
+
+    recentRequests.value = data.map((item, index) => {
+      const meta = STATUS_META[item.status] || { label: item.status, class: 'status-pending' }
+      const palette = AVATAR_PALETTE[index % AVATAR_PALETTE.length]
+
+      return {
+        id: item.id,
+        resident: item.requested_by?.name || 'Unknown resident',
+        type: item.document_type.name,
+        statusLabel: meta.label,
+        statusClass: meta.class,
+        date: formatDate(item.timeline.requested_at),
+        avatarBg: palette.bg,
+        avatarText: palette.text,
+      }
+    })
+  } catch (error) {
+    recentRequests.value = []
+    console.error('Failed to load recent requests', error)
+  } finally {
+    loadingRequests.value = false
+  }
+}
+
+onMounted(loadRecentRequests)
+
+// ── Appointments (still static — no appointments API built yet) ──────
 const appointments = [
   { id: 1, resident: 'Rosa Mendoza', purpose: 'Clearance renewal', time: '9:00 AM', day: '9', mon: 'Jun' },
   { id: 2, resident: 'Carlos Bautista', purpose: 'Business permit inquiry', time: '10:30 AM', day: '9', mon: 'Jun' },
@@ -336,6 +363,11 @@ function initials(name) {
     .slice(0, 2)
     .join('')
     .toUpperCase()
+}
+
+function formatDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
 }
 </script>
 

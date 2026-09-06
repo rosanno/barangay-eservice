@@ -32,8 +32,8 @@ const initials = computed(() => {
     .toUpperCase()
 })
 
-function signOut() {
-  auth.logout?.()
+async function signOut() {
+  await auth.logout?.()
   router.push('/login')
 }
 </script>
