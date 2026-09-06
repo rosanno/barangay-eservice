@@ -3,44 +3,15 @@
     <!-- ─── Stat cards ────────────────────────────────────────────── -->
     <v-row class="mb-2">
       <v-col v-for="stat in stats" :key="stat.label" cols="12" sm="6" lg="3">
-        <v-card
-          variant="flat"
-          style="
-            background: #ffffff;
-            border-radius: 10px;
-            border-left: 3px solid v-bind('stat.accentColor');
-            border-top: none;
-            border-right: none;
-            border-bottom: none;
-            box-shadow: none;
-          "
-          :style="{ borderLeftColor: stat.accentColor }"
-        >
-          <v-card-text class="pa-5">
-            <div class="text-caption mb-2" style="color: #888; font-weight: 500">
-              {{ stat.label }}
-            </div>
-            <div
-              style="
-                font-size: 28px;
-                font-weight: 600;
-                color: #1a1a1a;
-                line-height: 1;
-                margin-bottom: 6px;
-              "
-            >
-              {{ stat.value }}
-            </div>
-            <div
-              class="d-flex align-center ga-1"
-              :style="{ color: stat.deltaColor }"
-              style="font-size: 11px"
-            >
-              <v-icon :icon="stat.deltaIcon" size="12" />
-              {{ stat.delta }}
-            </div>
-          </v-card-text>
-        </v-card>
+        <StatCard
+          :label="stat.label"
+          :value="stat.value"
+          :accent-color="stat.accentColor"
+          :delta="stat.delta"
+          :delta-icon="stat.deltaIcon"
+          :delta-color="stat.deltaColor"
+          :loading="stat.loading"
+        />
       </v-col>
     </v-row>
 
@@ -249,23 +220,37 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
+import StatCard from '@/components/dashboard/StatCard.vue'
 
-const stats = [
+// ── Stat cards ──────────────────────────────────────────────────────
+// "Total requests" and "Pending approval" are now real counts (see
+// loadStats() below). "Released today" and "Today's appointments" stay
+// static — the first needs date-filtered querying and the second has no
+// appointments API yet, so wiring them up as real data is a separate
+// piece of work, not part of this change.
+const totalRequests = ref(0)
+const totalRequestsLoading = ref(true)
+const pendingApproval = ref(0)
+const pendingApprovalLoading = ref(true)
+
+const stats = computed(() => [
   {
     label: 'Total requests',
-    value: '247',
+    value: totalRequests.value,
     accentColor: '#0f1e3d',
-    delta: '+18 this week',
-    deltaIcon: 'mdi-trending-up',
-    deltaColor: '#27ae60',
+    delta: 'all time',
+    deltaIcon: 'mdi-file-multiple-outline',
+    deltaColor: '#888',
+    loading: totalRequestsLoading.value,
   },
   {
     label: 'Pending approval',
-    value: '12',
+    value: pendingApproval.value,
     accentColor: '#f5a623',
-    delta: 'Avg 1.4 days',
+    delta: 'awaiting review',
     deltaIcon: 'mdi-clock-outline',
     deltaColor: '#e67e22',
+    loading: pendingApprovalLoading.value,
   },
   {
     label: 'Released today',
@@ -274,6 +259,7 @@ const stats = [
     delta: '3 awaiting pickup',
     deltaIcon: 'mdi-check',
     deltaColor: '#27ae60',
+    loading: false,
   },
   {
     label: "Today's appointments",
@@ -282,19 +268,34 @@ const stats = [
     delta: 'Next at 2:00 PM',
     deltaIcon: 'mdi-calendar-outline',
     deltaColor: '#888',
+    loading: false,
   },
-]
+])
 
-// ── Recent requests (now real) ─────────────────────────────────────
+async function loadStats() {
+  totalRequestsLoading.value = true
+  pendingApprovalLoading.value = true
+  try {
+    // per_page: 1 keeps each request cheap — only meta.total is used.
+    const [totalRes, pendingRes] = await Promise.all([
+      fetchAdminDocumentRequests({ per_page: 1 }),
+      fetchAdminDocumentRequests({ status: 'pending', per_page: 1 }),
+    ])
+    totalRequests.value = totalRes.meta?.total ?? 0
+    pendingApproval.value = pendingRes.meta?.total ?? 0
+  } catch (error) {
+    console.error('Failed to load stats', error)
+  } finally {
+    totalRequestsLoading.value = false
+    pendingApprovalLoading.value = false
+  }
+}
+
+// ── Recent requests ─────────────────────────────────────────────────
 const recentRequests = ref([])
 const loadingRequests = ref(true)
 const tableColumns = ['Resident', 'Document type', 'Status', 'Date']
 
-// Backend status values -> this table's label + CSS class. The template's
-// original mock used labels like "Approved" that don't exist in the real
-// status set, so this maps each real value onto the closest existing chip
-// style (adjust freely, or add new .status-* classes for released/cancelled
-// if you want them visually distinct from ready/rejected).
 const STATUS_META = {
   pending: { label: 'Pending', class: 'status-pending' },
   processing: { label: 'Processing', class: 'status-processing' },
@@ -304,8 +305,6 @@ const STATUS_META = {
   cancelled: { label: 'Cancelled', class: 'status-rejected' },
 }
 
-// Cycled by index so avatars still look varied without the backend having
-// to supply colors — same visual effect as the old hardcoded palette.
 const AVATAR_PALETTE = [
   { bg: '#e8f0fe', text: '#1a5fd8' },
   { bg: '#e8f5e9', text: '#27ae60' },
@@ -341,7 +340,10 @@ async function loadRecentRequests() {
   }
 }
 
-onMounted(loadRecentRequests)
+onMounted(() => {
+  loadStats()
+  loadRecentRequests()
+})
 
 // ── Appointments (still static — no appointments API built yet) ──────
 const appointments = [
@@ -371,69 +373,5 @@ function formatDate(iso) {
 }
 </script>
 
-<style scoped>
-/* ── Appointment date badge ────────────────────────────────────────── */
-.appt-date-badge {
-  width: 38px;
-  height: 38px;
-  background: #0f1e3d;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.appt-day {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f5a623;
-  line-height: 1;
-}
-.appt-mon {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ── Status chips ──────────────────────────────────────────────────── */
-.status-chip {
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 20px;
-  padding: 2px 10px;
-  display: inline-block;
-  white-space: nowrap;
-}
-.status-pending {
-  background: #fff3e0;
-  color: #a05e00;
-}
-.status-approved {
-  background: #e8f5e9;
-  color: #1b6e34;
-}
-.status-processing {
-  background: #e8f0fe;
-  color: #1a5fd8;
-}
-.status-ready {
-  background: #fff9ed;
-  color: #a07020;
-  border: 1px solid #f5a62350;
-}
-.status-rejected {
-  background: #fdecea;
-  color: #c0392b;
-}
-
-/* ── Vuetify table overrides ───────────────────────────────────────── */
-:deep(.v-table__wrapper table) {
-  border-collapse: collapse;
-  width: 100%;
-}
-:deep(.v-table .v-table__wrapper > table > tbody > tr:hover td) {
-  background: #faf9f6 !important;
-}
+<style scoped src="./DashboardCss.css">
 </style>
