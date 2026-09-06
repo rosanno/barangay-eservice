@@ -1,20 +1,11 @@
-import axios from 'axios'
-
-/**
- * Adjust this to reuse your project's existing configured axios instance
- * (e.g. one that already attaches the Sanctum bearer token / base URL)
- * instead of creating a second one here.
- */
-const http = axios.create({
-  baseURL: '/api',
-})
+import api from '@/services/api'   // ← use your existing configured instance
 
 export function fetchDocumentTypes() {
-  return http.get('/document-types').then((res) => res.data.data)
+  return api.get('/document-types').then((res) => res.data.data)
 }
 
 export function fetchMyDocumentRequests(params = {}) {
-  return http.get('/document-requests', { params }).then((res) => res.data)
+  return api.get('/document-requests', { params }).then((res) => res.data)
 }
 
 export function submitDocumentRequest(payload) {
@@ -31,7 +22,7 @@ export function submitDocumentRequest(payload) {
     if (attachment.label) form.append(`attachments[${index}][label]`, attachment.label)
   })
 
-  return http
+  return api
     .post('/document-requests', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
@@ -39,5 +30,5 @@ export function submitDocumentRequest(payload) {
 }
 
 export function cancelDocumentRequest(uuid) {
-  return http.post(`/document-requests/${uuid}/cancel`).then((res) => res.data.data)
+  return api.post(`/document-requests/${uuid}/cancel`).then((res) => res.data.data)
 }
