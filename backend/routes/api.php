@@ -55,6 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/{documentRequest}/status', [DocumentRequestAdminController::class, 'updateStatus']);
         });
 
-        Route::get('appointments', [AppointmentAdminController::class, 'index']);
+        Route::prefix('appointments')->group(function () {
+            Route::get('/', [AppointmentAdminController::class, 'index']);
+            Route::patch('/{appointment}/status', [AppointmentAdminController::class, 'updateStatus']); // ← add this line
+        });
     });
 });

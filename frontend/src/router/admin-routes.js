@@ -12,7 +12,7 @@ export const adminRoutes = [
       // Add as you build them out:
       // { path: 'residents', name: 'admin-residents', component: () => import('@/views/admin/Residents.vue') },
       { path: 'clearances', name: 'admin-clearances', component: () => import('@/views/admin/Clearances.vue') },
-      // { path: 'appointments', name: 'admin-appointments', component: () => import('@/views/admin/Appointments.vue') },
+      { path: 'appointments', name: 'admin-appointments', component: () => import('@/views/admin/Appointments.vue') },
       // { path: 'documents', name: 'admin-documents', component: () => import('@/views/admin/Documents.vue') },
       // { path: 'ai-assistant', name: 'admin-ai-assistant', component: () => import('@/views/admin/AiAssistant.vue') },
       // { path: 'users', name: 'admin-users', component: () => import('@/views/admin/Users.vue') },
