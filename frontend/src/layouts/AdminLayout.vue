@@ -204,10 +204,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
+import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
+import { fetchAdminAppointments } from '@/api/adminAppointments'
 
 const { mdAndUp } = useDisplay()
 const route = useRoute()
@@ -216,16 +218,53 @@ const authStore = useAuthStore()
 
 const drawerOpen = ref(true)
 
-const primaryNav = [
-  { label: 'Dashboard', to: '/admin/dashboard', icon: 'mdi-view-dashboard-outline' },
-  { label: 'Requests', to: '/admin/clearances', icon: 'mdi-file-document-outline', badge: 12 },
-]
+// Real counts, replacing the hardcoded 12 / 5 that used to sit directly in
+// the nav arrays below. 0 is falsy, so the badge <template v-if="item.badge">
+// in the markup above already hides it automatically once a queue is clear
+// — no extra null-coercion needed.
+const pendingRequestsCount = ref(0)
+const todaysAppointmentsCount = ref(0)
 
-const serviceNav = [
+async function loadBadgeCounts() {
+  try {
+    const { meta } = await fetchAdminDocumentRequests({ status: 'pending', per_page: 1 })
+    pendingRequestsCount.value = meta?.total ?? 0
+  } catch {
+    pendingRequestsCount.value = 0
+  }
+
+  try {
+    // Only "scheduled" (not yet completed/cancelled) counts as something
+    // still needing attention today.
+    const data = await fetchAdminAppointments({ status: 'scheduled' })
+    todaysAppointmentsCount.value = data.length
+  } catch {
+    todaysAppointmentsCount.value = 0
+  }
+}
+
+onMounted(loadBadgeCounts)
+
+const primaryNav = computed(() => [
+  { label: 'Dashboard', to: '/admin/dashboard', icon: 'mdi-view-dashboard-outline' },
+  {
+    label: 'Requests',
+    to: '/admin/clearances',
+    icon: 'mdi-file-document-outline',
+    badge: pendingRequestsCount.value,
+  },
+])
+
+const serviceNav = computed(() => [
   { label: 'Clearance', to: '/admin/clearances/new', icon: 'mdi-certificate-outline' },
-  { label: 'Appointments', to: '/admin/appointments', icon: 'mdi-calendar-check-outline', badge: 5 },
+  {
+    label: 'Appointments',
+    to: '/admin/appointments',
+    icon: 'mdi-calendar-check-outline',
+    badge: todaysAppointmentsCount.value,
+  },
   { label: 'Doc tracking', to: '/admin/documents', icon: 'mdi-map-marker-outline' },
-]
+])
 
 const adminNav = [
   { label: 'Residents', to: '/admin/residents', icon: 'mdi-account-group-outline' },

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Enums\AppointmentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentAdminController extends Controller
 {
@@ -29,5 +32,31 @@ class AppointmentAdminController extends Controller
             ->get();
 
         return AppointmentResource::collection($appointments);
+    }
+
+    /**
+     * PATCH /api/admin/appointments/{appointment}/status
+     */
+    public function updateStatus(Request $request, Appointment $appointment): AppointmentResource
+    {
+        $validated = $request->validate([
+            'status' => ['required', new Enum(AppointmentStatus::class)],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $target = AppointmentStatus::from($validated['status']);
+
+        if (!$appointment->status->canTransitionTo($target)) {
+            throw ValidationException::withMessages([
+                'status' => "Cannot move an appointment from \"{$appointment->status->label()}\" to \"{$target->label()}\".",
+            ]);
+        }
+
+        $appointment->update([
+            'status' => $target,
+            'notes' => $validated['notes'] ?? $appointment->notes,
+        ]);
+
+        return new AppointmentResource($appointment->fresh('user'));
     }
 }

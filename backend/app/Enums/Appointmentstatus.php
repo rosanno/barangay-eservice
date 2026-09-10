@@ -18,4 +18,17 @@ enum AppointmentStatus: string
             self::NoShow => 'No Show',
         };
     }
+
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Scheduled => [self::Completed, self::Cancelled, self::NoShow],
+            self::Completed, self::Cancelled, self::NoShow => [],
+        };
+    }
+
+    public function canTransitionTo(self $target): bool
+    {
+        return in_array($target, $this->allowedTransitions(), true);
+    }
 }
