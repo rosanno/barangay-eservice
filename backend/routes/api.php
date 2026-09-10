@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\DocumentRequestAdminController;
+use App\Http\Controllers\Api\Admin\ResidentLookupController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
@@ -51,9 +52,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin-facing document requests → resolves to /api/admin/document-requests/...
         Route::prefix('document-requests')->group(function () {
             Route::get('/', [DocumentRequestAdminController::class, 'index']);
+            Route::post('/', [DocumentRequestAdminController::class, 'store']);
             Route::get('/{documentRequest}', [DocumentRequestAdminController::class, 'show']);
             Route::patch('/{documentRequest}/status', [DocumentRequestAdminController::class, 'updateStatus']);
         });
+
+        Route::get('residents/lookup', [ResidentLookupController::class, 'index']);
 
         Route::prefix('appointments')->group(function () {
             Route::get('/', [AppointmentAdminController::class, 'index']);
