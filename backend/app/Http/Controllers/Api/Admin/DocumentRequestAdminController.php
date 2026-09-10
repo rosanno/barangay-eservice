@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Storeadmindocumentrequestrequest;
 use App\Http\Requests\UpdateDocumentRequestStatusRequest;
 use App\Http\Resources\DocumentRequestResource;
 use App\Models\DocumentRequest;
+use App\Models\User;
 use App\Services\DocumentRequestService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -14,6 +17,17 @@ class DocumentRequestAdminController extends Controller
 {
     public function __construct(private readonly DocumentRequestService $service)
     {
+    }
+
+    public function store(Storeadmindocumentrequestrequest $request): JsonResponse
+    {
+        $resident = User::findOrFail($request->validated('resident_id'));
+
+        $documentRequest = $this->service->create($resident, $request->validated());
+
+        return (new DocumentRequestResource($documentRequest))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -25,13 +39,13 @@ class DocumentRequestAdminController extends Controller
 
         $requests = DocumentRequest::query()
             ->with(['documentType', 'user', 'attachments'])
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->when($request->filled('document_type_id'), fn ($q) => $q->where('document_type_id', $request->integer('document_type_id')))
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('document_type_id'), fn($q) => $q->where('document_type_id', $request->integer('document_type_id')))
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term = '%' . $request->string('search') . '%';
                 $q->where(function ($sub) use ($term) {
                     $sub->where('tracking_number', 'like', $term)
-                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term));
+                        ->orWhereHas('user', fn($u) => $u->where('name', 'like', $term));
                 });
             })
             ->latest()
