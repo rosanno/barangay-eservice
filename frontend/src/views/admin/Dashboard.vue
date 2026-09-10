@@ -155,7 +155,19 @@
           </div>
 
           <v-card-text class="px-5 pt-4 pb-2">
+            <div v-if="loadingAppointments" class="d-flex justify-center py-8">
+              <v-progress-circular indeterminate size="20" color="#0f1e3d" />
+            </div>
+
+            <p
+              v-else-if="!appointments.length"
+              style="font-size: 12px; color: #999; padding: 8px 0 16px"
+            >
+              No appointments scheduled for today.
+            </p>
+
             <div
+              v-else
               v-for="(appt, i) in appointments"
               :key="appt.id"
               class="d-flex align-center ga-3 py-3"
@@ -220,14 +232,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
+import { fetchAdminAppointments } from '@/api/adminAppointments'
 import StatCard from '@/components/dashboard/StatCard.vue'
 
 // ── Stat cards ──────────────────────────────────────────────────────
-// "Total requests" and "Pending approval" are now real counts (see
-// loadStats() below). "Released today" and "Today's appointments" stay
-// static — the first needs date-filtered querying and the second has no
-// appointments API yet, so wiring them up as real data is a separate
-// piece of work, not part of this change.
 const totalRequests = ref(0)
 const totalRequestsLoading = ref(true)
 const pendingApproval = ref(0)
@@ -263,12 +271,12 @@ const stats = computed(() => [
   },
   {
     label: "Today's appointments",
-    value: '5',
+    value: appointments.value.length,
     accentColor: '#2e86de',
-    delta: 'Next at 2:00 PM',
+    delta: appointments.value.length ? `Next at ${appointments.value[0].time}` : 'None scheduled',
     deltaIcon: 'mdi-calendar-outline',
     deltaColor: '#888',
-    loading: false,
+    loading: loadingAppointments.value,
   },
 ])
 
@@ -276,7 +284,6 @@ async function loadStats() {
   totalRequestsLoading.value = true
   pendingApprovalLoading.value = true
   try {
-    // per_page: 1 keeps each request cheap — only meta.total is used.
     const [totalRes, pendingRes] = await Promise.all([
       fetchAdminDocumentRequests({ per_page: 1 }),
       fetchAdminDocumentRequests({ status: 'pending', per_page: 1 }),
@@ -340,18 +347,39 @@ async function loadRecentRequests() {
   }
 }
 
+// ── Appointments (now real) ──────────────────────────────────────────
+const appointments = ref([])
+const loadingAppointments = ref(true)
+
+async function loadAppointments() {
+  loadingAppointments.value = true
+  try {
+    const data = await fetchAdminAppointments()
+
+    appointments.value = data.map((item) => {
+      const date = new Date(item.scheduled_at)
+      return {
+        id: item.id,
+        resident: item.resident_name,
+        purpose: item.purpose,
+        time: date.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' }),
+        day: date.toLocaleDateString('en-PH', { day: 'numeric' }),
+        mon: date.toLocaleDateString('en-PH', { month: 'short' }),
+      }
+    })
+  } catch (error) {
+    appointments.value = []
+    console.error('Failed to load appointments', error)
+  } finally {
+    loadingAppointments.value = false
+  }
+}
+
 onMounted(() => {
   loadStats()
   loadRecentRequests()
+  loadAppointments()
 })
-
-// ── Appointments (still static — no appointments API built yet) ──────
-const appointments = [
-  { id: 1, resident: 'Rosa Mendoza', purpose: 'Clearance renewal', time: '9:00 AM', day: '9', mon: 'Jun' },
-  { id: 2, resident: 'Carlos Bautista', purpose: 'Business permit inquiry', time: '10:30 AM', day: '9', mon: 'Jun' },
-  { id: 3, resident: 'Liza Fernandez', purpose: 'Residency certificate', time: '2:00 PM', day: '9', mon: 'Jun' },
-  { id: 4, resident: 'Ramon Torres', purpose: 'Indigency certificate', time: '3:30 PM', day: '9', mon: 'Jun' },
-]
 
 // ── Helpers ─────────────────────────────────────────────────────────
 const todayLabel = computed(() => {
