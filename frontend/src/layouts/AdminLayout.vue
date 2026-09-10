@@ -249,14 +249,14 @@ const primaryNav = computed(() => [
   { label: 'Dashboard', to: '/admin/dashboard', icon: 'mdi-view-dashboard-outline' },
   {
     label: 'Requests',
-    to: '/admin/clearances',
+    to: '/admin/requests',
     icon: 'mdi-file-document-outline',
     badge: pendingRequestsCount.value,
   },
 ])
 
 const serviceNav = computed(() => [
-  { label: 'Clearance', to: '/admin/clearances/new', icon: 'mdi-certificate-outline' },
+  { label: 'Clearances', to: '/admin/clearances', icon: 'mdi-certificate-outline' },
   {
     label: 'Appointments',
     to: '/admin/appointments',
