@@ -1,0 +1,96 @@
+.tight-menu :deep(.v-list-item-title) {
+  font-size: 13px;
+}
+
+.tight-menu :deep(.v-list-item__prepend) {
+  margin-inline-end: -20px; /* default is much larger — pull the title in */
+}
+
+.tight-menu :deep(.v-list-item__prepend .v-icon) {
+  font-size: 16px;
+}
+
+:deep(.v-list-item-title) {
+  font-size: 12px;
+}
+
+.nav-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0 12px;
+  margin-bottom: 4px;
+}
+
+/* Base nav item */
+:deep(.nav-item .v-list-item-title) {
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.65);
+}
+:deep(.nav-item .v-icon) {
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 17px !important;
+}
+
+/* Hover */
+:deep(.nav-item:hover .v-list-item-title) {
+  color: #ffffff;
+}
+:deep(.nav-item:hover .v-icon) {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+:deep(.nav-item:hover) {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Active */
+:deep(.nav-item--active) {
+  background: #f5a623 !important;
+}
+:deep(.nav-item--active .v-list-item-title) {
+  color: #0f1e3d !important;
+  font-weight: 600 !important;
+}
+:deep(.nav-item--active .v-icon) {
+  color: #0f1e3d !important;
+}
+
+/* Active */
+:deep(.nav-item--active) {
+  background: #f5a623 !important;
+}
+:deep(.nav-item--active .v-list-item-title) {
+  color: #0f1e3d !important;
+  font-weight: 600 !important;
+}
+:deep(.nav-item--active .v-icon) {
+  color: #0f1e3d !important;
+}
+
+/* Active + hover — must win over the plain :hover rules above */
+:deep(.nav-item--active:hover) {
+  background: #f5a623 !important;
+}
+:deep(.nav-item--active:hover .v-list-item-title) {
+  color: #0f1e3d !important;
+  font-weight: 600 !important;
+}
+:deep(.nav-item--active:hover .v-icon) {
+  color: #0f1e3d !important;
+}
+
+.nav-badge {
+  background: #e8523a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 1px 7px;
+  line-height: 1.6;
+}
+:deep(.nav-item--active) .nav-badge {
+  background: rgba(15, 30, 61, 0.2);
+  color: #0f1e3d;
+}
