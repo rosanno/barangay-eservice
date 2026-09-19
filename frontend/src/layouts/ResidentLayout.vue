@@ -80,6 +80,10 @@ async function signOut() {
           <v-icon icon="mdi-magnify" size="18" />
           <span>Track a request</span>
         </router-link>
+        <router-link to="/appointments" class="sidebar__link" active-class="sidebar__link--active">
+          <v-icon icon="mdi-calendar-outline" size="18" />
+          <span>Appointments</span>
+        </router-link>
 
         <p class="sidebar__section-label">Account</p>
         <router-link to="/profile" class="sidebar__link" active-class="sidebar__link--active">

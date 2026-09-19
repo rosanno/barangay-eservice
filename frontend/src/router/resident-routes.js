@@ -28,6 +28,12 @@ export const residentRoutes = [
         component: () => import('@/pages/documents/RequestDocumentPage.vue'),
         meta: { title: 'Request a document', subtitle: 'Submit a new document request' },
       },
+      {
+        path: 'appointments',
+        name: 'appointments',
+        component: () => import('@/views/resident/BookAppointment.vue'),
+        meta: { title: 'Appointments', subtitle: 'Book and manage your appointments' },
+      },
       // Add as you build them out:
       // { path: 'documents', name: 'documents', component: () => import('@/views/resident/MyRequests.vue'), meta: { title: 'My requests' } },
       // { path: 'documents/track', name: 'documents-track', component: () => import('@/views/resident/TrackRequest.vue'), meta: { title: 'Track a request' } },
