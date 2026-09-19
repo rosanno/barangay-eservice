@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\DocumentRequestAdminController;
 use App\Http\Controllers\Api\Admin\ResidentLookupController;
 use App\Http\Controllers\Api\AdminUserController;
+use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
 use App\Http\Controllers\Api\DocumentTypeController;
@@ -36,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/track/{trackingNumber}', [DocumentRequestController::class, 'trackByNumber']);
         Route::get('/{documentRequest}', [DocumentRequestController::class, 'show']);
         Route::post('/{documentRequest}/cancel', [DocumentRequestController::class, 'cancel']);
+    });
+
+    Route::prefix('appointments')->group(function () {
+        Route::get('/', [AppointmentController::class, 'index']);
+        Route::post('/', [AppointmentController::class, 'store']);
+        Route::post('/{appointment}/cancel', [AppointmentController::class, 'cancel']);
     });
 
     /*
