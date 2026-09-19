@@ -117,7 +117,7 @@
               <v-btn
                 variant="text"
                 size="small"
-                to="/admin/clearances"
+                to="/admin/requests"
                 style="
                   color: #0f1e3d;
                   font-size: 12px;

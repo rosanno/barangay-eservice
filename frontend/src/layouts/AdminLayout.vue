@@ -145,7 +145,7 @@
           letter-spacing: 0;
         "
         prepend-icon="mdi-plus"
-        :to="'/admin/clearances/new'"
+        :to="'/admin/requests/new'"
       >
         New request
       </v-btn>
@@ -247,16 +247,15 @@ onMounted(loadBadgeCounts)
 
 const primaryNav = computed(() => [
   { label: 'Dashboard', to: '/admin/dashboard', icon: 'mdi-view-dashboard-outline' },
+])
+
+const serviceNav = computed(() => [
   {
-    label: 'Requests',
+    label: 'Clearance Requests',
     to: '/admin/requests',
     icon: 'mdi-file-document-outline',
     badge: pendingRequestsCount.value,
   },
-])
-
-const serviceNav = computed(() => [
-  { label: 'Clearances', to: '/admin/clearances', icon: 'mdi-certificate-outline' },
   {
     label: 'Appointments',
     to: '/admin/appointments',
@@ -275,8 +274,8 @@ const adminNav = [
 
 const pageMeta = {
   '/admin/dashboard': ['Dashboard', 'Overview of barangay e-services'],
-  '/admin/clearances': ['Document Requests', 'Manage and process incoming requests'],
-  '/admin/clearances/new': ['New Clearance', 'Submit a clearance application'],
+  '/admin/requests': ['Document Requests', 'Manage and process incoming requests'],
+  '/admin/requests/new': ['New Clearance', 'Submit a clearance application'],
   '/admin/appointments': ['Appointments', 'Book and manage resident appointments'],
   '/admin/documents': ['Document Tracking', 'Track real-time document status'],
   '/admin/residents': ['Residents', 'Registered barangay residents'],
