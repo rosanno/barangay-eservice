@@ -49,6 +49,7 @@ class DocumentRequestResource extends JsonResource
                 'ready_at' => $this->ready_at?->toIso8601String(),
                 'released_at' => $this->released_at?->toIso8601String(),
                 'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+                'updated_at' => $this->updated_at?->toIso8601String(),
             ],
         ];
     }

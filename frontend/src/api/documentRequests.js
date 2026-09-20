@@ -1,4 +1,4 @@
-import api from '@/services/api'   // ← use your existing configured instance
+import api from '@/services/api'
 
 export function fetchDocumentTypes() {
   return api.get('/document-types').then((res) => res.data.data)
@@ -6,6 +6,17 @@ export function fetchDocumentTypes() {
 
 export function fetchMyDocumentRequests(params = {}) {
   return api.get('/document-requests', { params }).then((res) => res.data)
+}
+
+/**
+ * GET /document-requests/track/{trackingNumber}
+ * Works for both a resident tracking their own request and staff/admin
+ * looking up ANY resident's request — DocumentRequestPolicy::view() allows
+ * staff/admin regardless of ownership, so no separate admin endpoint is
+ * needed for this.
+ */
+export function trackDocumentRequestByNumber(trackingNumber) {
+  return api.get(`/document-requests/track/${trackingNumber}`).then((res) => res.data.data)
 }
 
 export function submitDocumentRequest(payload) {
