@@ -5,7 +5,7 @@
       <div>
         <div class="d-flex align-center">
           <v-icon icon="mdi-file-document-outline" size="16" style="color: #f5a623; margin-right: 7px" />
-          <span style="font-size: 14px; font-weight: 600; color: #1a1a1a">All requests</span>
+          <span style="font-size: 14px; font-weight: 600; color: #1a1a1a">Requests</span>
         </div>
         <p style="font-size: 11px; color: #aaa; margin: 2px 0 0 23px">
           {{ meta.total ?? 0 }} total
@@ -170,11 +170,14 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   fetchAdminDocumentRequests,
   updateAdminDocumentRequestStatus,
 } from '@/api/adminDocumentRequests'
 import { fetchDocumentTypes } from '@/api/documentRequests'
+
+const route = useRoute()
 
 const tableColumns = ['Resident', 'Document type', 'Tracking #', 'Status', 'Date', '']
 
@@ -220,7 +223,7 @@ const statusOptions = [
 ]
 
 const filters = reactive({
-  search: '',
+  search: typeof route.query.search === 'string' ? route.query.search : '',
   status: null,
   documentTypeId: null,
   page: 1,

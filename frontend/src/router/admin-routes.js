@@ -10,7 +10,7 @@ export const adminRoutes = [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', name: 'admin-dashboard', component: AdminDashboard },
       // Add as you build them out:
-      // { path: 'residents', name: 'admin-residents', component: () => import('@/views/admin/Residents.vue') },
+      { path: 'residents', name: 'admin-residents', component: () => import('@/views/admin/Residents.vue') },
       { path: 'requests', name: 'admin-clearances', component: () => import('@/views/admin/Requests.vue') },
       { path: 'requests/new', name: 'admin-clearances-new', component: () => import('@/views/admin/NewClearance.vue') },
       { path: 'appointments', name: 'admin-appointments', component: () => import('@/views/admin/Appointments.vue') },
