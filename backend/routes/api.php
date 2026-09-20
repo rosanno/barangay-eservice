@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\DocumentRequestAdminController;
+use App\Http\Controllers\Api\Admin\ResidentAdminController;
 use App\Http\Controllers\Api\Admin\ResidentLookupController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AppointmentController;
@@ -64,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/{documentRequest}/status', [DocumentRequestAdminController::class, 'updateStatus']);
         });
 
+        Route::get('residents', [ResidentAdminController::class, 'index']);
         Route::get('residents/lookup', [ResidentLookupController::class, 'index']);
 
         Route::prefix('appointments')->group(function () {
