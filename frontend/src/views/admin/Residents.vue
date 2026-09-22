@@ -12,16 +12,25 @@
         </p>
       </div>
 
-      <v-text-field
-        v-model="search"
-        density="compact"
-        variant="outlined"
-        placeholder="Search by name or email"
-        prepend-inner-icon="mdi-magnify"
-        hide-details
-        class="filter-input search-field"
-        @update:model-value="onSearchInput"
-      />
+      <div class="d-flex align-center ga-2">
+        <v-text-field
+          v-model="search"
+          density="compact"
+          variant="outlined"
+          placeholder="Search by name or email"
+          prepend-inner-icon="mdi-magnify"
+          hide-details
+          class="filter-input search-field"
+          @update:model-value="onSearchInput"
+        />
+        <v-btn
+          style="background: #0f1e3d; color: #fff; text-transform: none"
+          prepend-icon="mdi-plus"
+          @click="openAddDialog"
+        >
+          Add resident
+        </v-btn>
+      </div>
     </div>
 
     <!-- ─── Table ────────────────────────────────────────────────── -->
@@ -85,12 +94,81 @@
         </div>
       </v-card-text>
     </v-card>
+
+    <!-- ─── Add resident dialog ──────────────────────────────────── -->
+    <v-dialog v-model="addDialog.open" max-width="420">
+      <v-card>
+        <v-card-title style="font-size: 15px">Add resident</v-card-title>
+        <v-card-text>
+          <div class="field-block">
+            <label class="field-label">Full name</label>
+            <v-text-field
+              v-model="addDialog.name"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </div>
+          <div class="field-block">
+            <label class="field-label">Email</label>
+            <v-text-field
+              v-model="addDialog.email"
+              type="email"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </div>
+          <div class="field-block">
+            <label class="field-label">Initial password</label>
+            <v-text-field
+              v-model="addDialog.password"
+              type="password"
+              density="compact"
+              variant="outlined"
+              hint="At least 8 characters. Share this with the resident directly."
+              persistent-hint
+            />
+          </div>
+          <div class="field-block">
+            <label class="field-label">Confirm password</label>
+            <v-text-field
+              v-model="addDialog.passwordConfirmation"
+              type="password"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </div>
+
+          <p v-if="addDialog.error" style="font-size: 12px; color: #c0392b; margin: 4px 0 0">
+            {{ addDialog.error }}
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="addDialog.open = false">Cancel</v-btn>
+          <v-btn
+            style="background: #0f1e3d; color: #fff; text-transform: none"
+            :loading="addDialog.submitting"
+            :disabled="!canSubmitAdd"
+            @click="submitAddResident"
+          >
+            Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="snackbar.open" :color="snackbar.color" timeout="3500">
+      {{ snackbar.text }}
+    </v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { fetchAdminResidents } from '@/api/adminResidents'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { fetchAdminResidents, createResident } from '@/api/adminResidents'
 
 const tableColumns = ['Name', 'Email', 'Joined', 'Requests', '']
 
@@ -153,6 +231,62 @@ function initials(name) {
     .toUpperCase()
 }
 
+const addDialog = reactive({
+  open: false,
+  name: '',
+  email: '',
+  password: '',
+  passwordConfirmation: '',
+  submitting: false,
+  error: '',
+})
+
+const snackbar = reactive({ open: false, text: '', color: 'success' })
+
+const canSubmitAdd = computed(
+  () =>
+    addDialog.name.trim() &&
+    addDialog.email.trim() &&
+    addDialog.password.length >= 8 &&
+    addDialog.password === addDialog.passwordConfirmation
+)
+
+function openAddDialog() {
+  addDialog.name = ''
+  addDialog.email = ''
+  addDialog.password = ''
+  addDialog.passwordConfirmation = ''
+  addDialog.error = ''
+  addDialog.open = true
+}
+
+async function submitAddResident() {
+  addDialog.error = ''
+  addDialog.submitting = true
+  try {
+    await createResident({
+      name: addDialog.name.trim(),
+      email: addDialog.email.trim(),
+      password: addDialog.password,
+      passwordConfirmation: addDialog.passwordConfirmation,
+    })
+
+    addDialog.open = false
+    snackbar.text = `${addDialog.name} was added as a resident.`
+    snackbar.color = 'success'
+    snackbar.open = true
+
+    await loadResidents(1)
+  } catch (error) {
+    addDialog.error =
+      error?.response?.data?.message ||
+      Object.values(error?.response?.data?.errors || {})[0]?.[0] ||
+      'Could not create this resident. Please check the details and try again.'
+  } finally {
+    addDialog.submitting = false
+  }
+}
+
 function formatDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -163,43 +297,5 @@ onMounted(() => loadResidents(1))
 
 <style scoped src="./DashboardCss.css"></style>
 
-<style scoped>
-.table-head {
-  font-size: 11px;
-  font-weight: 500;
-  color: #999;
-  border-bottom: 1px solid #f0ede3;
-  padding: 0 8px 8px;
-  text-transform: none;
-  letter-spacing: 0;
-  text-align: left;
-}
-
-.table-row {
-  border-bottom: 1px solid #f7f5f0;
-}
-
-.filter-input :deep(.v-field__input),
-.filter-input :deep(input) {
-  font-size: 12.5px;
-}
-
-.search-field {
-  width: 200px;
-  max-width: 100%;
-  flex-shrink: 1;
-}
-
-@media (max-width: 540px) {
-  .search-field {
-    width: 100%;
-  }
-}
-
-.view-link {
-  font-size: 12px;
-  color: #0f1e3d;
-  font-weight: 600;
-  text-decoration: none;
-}
+<style scoped src="./ResidentsCss.css">
 </style>

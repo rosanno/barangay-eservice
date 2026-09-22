@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ResidentAdminController extends Controller
 {
@@ -56,5 +58,38 @@ class ResidentAdminController extends Controller
                 'total' => $residents->total(),
             ],
         ]);
+    }
+
+    /**
+     * POST /api/admin/residents
+     *
+     * Admin sets the resident's initial password directly (no email/mail
+     * setup assumed to exist) — the resident can change it later from their
+     * own profile once that's built.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $resident = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'resident',
+        ]);
+
+        return response()->json([
+            'data' => [
+                'id' => $resident->id,
+                'name' => $resident->name,
+                'email' => $resident->email,
+                'joined_at' => optional($resident->created_at)->toIso8601String(),
+                'request_count' => 0,
+            ],
+        ], 201);
     }
 }
