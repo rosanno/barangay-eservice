@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('residents', [ResidentAdminController::class, 'index']);
         Route::get('residents/lookup', [ResidentLookupController::class, 'index']);
+        Route::post('residents', [ResidentAdminController::class, 'store']);
 
         Route::prefix('appointments')->group(function () {
             Route::get('/', [AppointmentAdminController::class, 'index']);
