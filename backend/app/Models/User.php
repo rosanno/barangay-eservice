@@ -77,4 +77,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function resident()
+    {
+        return $this->hasOne(\App\Models\Resident::class);
+    }
 }
