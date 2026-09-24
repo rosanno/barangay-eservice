@@ -17,7 +17,7 @@
           v-model="search"
           density="compact"
           variant="outlined"
-          placeholder="Search by name or email"
+          placeholder="Search by name, email, or purok"
           prepend-inner-icon="mdi-magnify"
           hide-details
           class="filter-input search-field"
@@ -26,7 +26,7 @@
         <v-btn
           style="background: #0f1e3d; color: #fff; text-transform: none"
           prepend-icon="mdi-plus"
-          @click="openAddDialog"
+          to="/admin/residents/new"
         >
           Add resident
         </v-btn>
@@ -65,8 +65,9 @@
                 </div>
               </td>
               <td style="font-size: 12px; color: #666; padding: 12px 8px">{{ resident.email }}</td>
-              <td style="font-size: 11px; color: #999; padding: 12px 8px; white-space: nowrap">
-                {{ resident.joinedLabel }}
+              <td style="font-size: 12px; color: #666; padding: 12px 8px">{{ resident.purok || '—' }}</td>
+              <td style="font-size: 12px; color: #666; padding: 12px 8px">
+                {{ resident.sex || '—' }}<span v-if="resident.age"> · {{ resident.age }} yrs</span>
               </td>
               <td style="font-size: 12px; color: #1a1a1a; padding: 12px 8px; text-align: center">
                 {{ resident.requestCount }}
@@ -94,83 +95,14 @@
         </div>
       </v-card-text>
     </v-card>
-
-    <!-- ─── Add resident dialog ──────────────────────────────────── -->
-    <v-dialog v-model="addDialog.open" max-width="420">
-      <v-card>
-        <v-card-title style="font-size: 15px">Add resident</v-card-title>
-        <v-card-text>
-          <div class="field-block">
-            <label class="field-label">Full name</label>
-            <v-text-field
-              v-model="addDialog.name"
-              density="compact"
-              variant="outlined"
-              hide-details
-            />
-          </div>
-          <div class="field-block">
-            <label class="field-label">Email</label>
-            <v-text-field
-              v-model="addDialog.email"
-              type="email"
-              density="compact"
-              variant="outlined"
-              hide-details
-            />
-          </div>
-          <div class="field-block">
-            <label class="field-label">Initial password</label>
-            <v-text-field
-              v-model="addDialog.password"
-              type="password"
-              density="compact"
-              variant="outlined"
-              hint="At least 8 characters. Share this with the resident directly."
-              persistent-hint
-            />
-          </div>
-          <div class="field-block">
-            <label class="field-label">Confirm password</label>
-            <v-text-field
-              v-model="addDialog.passwordConfirmation"
-              type="password"
-              density="compact"
-              variant="outlined"
-              hide-details
-            />
-          </div>
-
-          <p v-if="addDialog.error" style="font-size: 12px; color: #c0392b; margin: 4px 0 0">
-            {{ addDialog.error }}
-          </p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="addDialog.open = false">Cancel</v-btn>
-          <v-btn
-            style="background: #0f1e3d; color: #fff; text-transform: none"
-            :loading="addDialog.submitting"
-            :disabled="!canSubmitAdd"
-            @click="submitAddResident"
-          >
-            Create
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-snackbar v-model="snackbar.open" :color="snackbar.color" timeout="3500">
-      {{ snackbar.text }}
-    </v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import { fetchAdminResidents, createResident } from '@/api/adminResidents'
+import { onMounted, ref } from 'vue'
+import { fetchAdminResidents } from '@/api/adminResidents'
 
-const tableColumns = ['Name', 'Email', 'Joined', 'Requests', '']
+const tableColumns = ['Name', 'Email', 'Purok', 'Sex / Age', 'Requests', '']
 
 const AVATAR_PALETTE = [
   { bg: '#e8f0fe', text: '#1a5fd8' },
@@ -207,8 +139,10 @@ async function loadResidents(targetPage = page.value) {
         id: resident.id,
         name: resident.name,
         email: resident.email,
+        purok: resident.purok,
+        sex: resident.sex,
+        age: resident.age,
         requestCount: resident.request_count,
-        joinedLabel: formatDate(resident.joined_at),
         avatarBg: palette.bg,
         avatarText: palette.text,
       }
@@ -229,67 +163,6 @@ function initials(name) {
     .slice(0, 2)
     .join('')
     .toUpperCase()
-}
-
-const addDialog = reactive({
-  open: false,
-  name: '',
-  email: '',
-  password: '',
-  passwordConfirmation: '',
-  submitting: false,
-  error: '',
-})
-
-const snackbar = reactive({ open: false, text: '', color: 'success' })
-
-const canSubmitAdd = computed(
-  () =>
-    addDialog.name.trim() &&
-    addDialog.email.trim() &&
-    addDialog.password.length >= 8 &&
-    addDialog.password === addDialog.passwordConfirmation
-)
-
-function openAddDialog() {
-  addDialog.name = ''
-  addDialog.email = ''
-  addDialog.password = ''
-  addDialog.passwordConfirmation = ''
-  addDialog.error = ''
-  addDialog.open = true
-}
-
-async function submitAddResident() {
-  addDialog.error = ''
-  addDialog.submitting = true
-  try {
-    await createResident({
-      name: addDialog.name.trim(),
-      email: addDialog.email.trim(),
-      password: addDialog.password,
-      passwordConfirmation: addDialog.passwordConfirmation,
-    })
-
-    addDialog.open = false
-    snackbar.text = `${addDialog.name} was added as a resident.`
-    snackbar.color = 'success'
-    snackbar.open = true
-
-    await loadResidents(1)
-  } catch (error) {
-    addDialog.error =
-      error?.response?.data?.message ||
-      Object.values(error?.response?.data?.errors || {})[0]?.[0] ||
-      'Could not create this resident. Please check the details and try again.'
-  } finally {
-    addDialog.submitting = false
-  }
-}
-
-function formatDate(iso) {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 onMounted(() => loadResidents(1))
