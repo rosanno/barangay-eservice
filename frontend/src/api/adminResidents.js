@@ -14,13 +14,11 @@ export function fetchAdminResidents(params = {}) {
   return api.get('/admin/residents', { params }).then((res) => res.data)
 }
 
+/**
+ * payload carries every field from the registration form — personal,
+ * family background, emergency contact, and account credentials — in one
+ * flat object, matching StoreResidentRequest's validation on the backend.
+ */
 export function createResident(payload) {
-  return api
-    .post('/admin/residents', {
-      name: payload.name,
-      email: payload.email,
-      password: payload.password,
-      password_confirmation: payload.passwordConfirmation,
-    })
-    .then((res) => res.data.data)
+  return api.post('/admin/residents', payload).then((res) => res.data.data)
 }

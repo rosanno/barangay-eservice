@@ -11,6 +11,7 @@ export const adminRoutes = [
       { path: 'dashboard', name: 'admin-dashboard', component: AdminDashboard },
       // Add as you build them out:
       { path: 'residents', name: 'admin-residents', component: () => import('@/views/admin/Residents.vue') },
+      { path: 'residents/new', name: 'admin-residents-new', component: () => import('@/views/admin/NewResident.vue') },
       { path: 'requests', name: 'admin-clearances', component: () => import('@/views/admin/Requests.vue') },
       { path: 'requests/new', name: 'admin-clearances-new', component: () => import('@/views/admin/NewClearance.vue') },
       { path: 'appointments', name: 'admin-appointments', component: () => import('@/views/admin/Appointments.vue') },

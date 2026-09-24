@@ -279,6 +279,7 @@ const pageMeta = {
   '/admin/appointments': ['Appointments', 'Book and manage resident appointments'],
   '/admin/documents': ['Document Tracking', 'Track real-time document status'],
   '/admin/residents': ['Residents', 'Registered barangay residents'],
+  '/admin/residents/new': ['Register Resident', 'Add a new resident and create their account'],
   '/admin/reports': ['Reports', 'Analytics and statistics'],
   '/admin/users': ['Staff & Admins', 'Manage system users'],
   '/admin/settings': ['Settings', 'System configuration'],
