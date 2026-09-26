@@ -1,0 +1,106 @@
+.page-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+}
+
+.form-column {
+  min-width: 0;
+}
+
+.actions-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.section-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+}
+
+.section-hint {
+  font-size: 11px;
+  color: #999;
+  margin: 0 0 16px;
+}
+
+.subsection-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 18px 0 10px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.field-block {
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.req {
+  color: #c0392b;
+}
+
+.native-input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  height: 40px;
+  box-sizing: border-box;
+}
+
+.computed-value {
+  padding: 9px 10px;
+  border: 1px dashed #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+  background: #fafafa;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
