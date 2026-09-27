@@ -16,6 +16,7 @@ export const adminRoutes = [
       { path: 'requests/new', name: 'admin-clearances-new', component: () => import('@/views/admin/NewClearance.vue') },
       { path: 'appointments', name: 'admin-appointments', component: () => import('@/views/admin/Appointments.vue') },
       { path: 'documents', name: 'admin-documents', component: () => import('@/views/admin/Documents.vue') },
+      { path: 'reports', name: 'admin-reports', component: () => import('@/views/admin/Reports.vue') },
       // { path: 'ai-assistant', name: 'admin-ai-assistant', component: () => import('@/views/admin/AiAssistant.vue') },
       // { path: 'users', name: 'admin-users', component: () => import('@/views/admin/Users.vue') },
     ],
