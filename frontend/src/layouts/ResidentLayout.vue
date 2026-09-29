@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { fetchMyDocumentRequests } from '@/api/documentRequests'
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@/api/notifications'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,7 @@ onMounted(async () => {
   } catch {
     pendingCount.value = 0
   }
+  loadNotifications()
 })
 
 const pageTitle = computed(() => route.meta.title || 'Dashboard')
@@ -31,6 +33,62 @@ const initials = computed(() => {
     .join('')
     .toUpperCase()
 })
+
+// ── Notifications ──────────────────────────────────────────────────
+const notifications = ref([])
+const unreadCount = ref(0)
+const loadingNotifications = ref(false)
+const notifMenuOpen = ref(false)
+
+async function loadNotifications() {
+  loadingNotifications.value = true
+  try {
+    const { data, unread_count } = await fetchNotifications()
+    notifications.value = data
+    unreadCount.value = unread_count
+  } catch {
+    notifications.value = []
+  } finally {
+    loadingNotifications.value = false
+  }
+}
+
+function onNotifMenuToggle(isOpen) {
+  notifMenuOpen.value = isOpen
+  if (isOpen) loadNotifications()
+}
+
+async function handleNotificationClick(note) {
+  if (!note.read) {
+    note.read = true
+    unreadCount.value = Math.max(0, unreadCount.value - 1)
+    try {
+      await markNotificationRead(note.id)
+    } catch {
+      // Non-critical — self-corrects next time the list is opened.
+    }
+  }
+}
+
+async function handleMarkAllRead() {
+  notifications.value = notifications.value.map((n) => ({ ...n, read: true }))
+  unreadCount.value = 0
+  try {
+    await markAllNotificationsRead()
+  } catch {
+    // Non-critical.
+  }
+}
+
+function timeAgo(iso) {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
 
 async function signOut() {
   await auth.logout?.()
@@ -81,7 +139,7 @@ async function signOut() {
           <span>Track a request</span>
         </router-link>
         <router-link to="/appointments" class="sidebar__link" active-class="sidebar__link--active">
-          <v-icon icon="mdi-calendar-outline" size="18" />
+          <v-icon icon="mdi-calendar-check-outline" size="18" />
           <span>Appointments</span>
         </router-link>
 
@@ -115,10 +173,51 @@ async function signOut() {
             New request
           </router-link>
 
-          <button type="button" class="topbar__icon-btn" aria-label="Notifications">
-            <v-icon icon="mdi-bell-outline" size="20" />
-            <span class="topbar__icon-dot" aria-hidden="true" />
-          </button>
+          <v-menu location="bottom end" min-width="300" @update:model-value="onNotifMenuToggle">
+            <template #activator="{ props }">
+              <button type="button" class="topbar__icon-btn" aria-label="Notifications" v-bind="props">
+                <v-icon icon="mdi-bell-outline" size="20" />
+                <span v-if="unreadCount > 0" class="topbar__icon-dot" aria-hidden="true" />
+              </button>
+            </template>
+
+            <div class="notif-panel">
+              <div class="notif-panel__header">
+                <span>Notifications</span>
+                <button
+                  v-if="unreadCount > 0"
+                  type="button"
+                  class="notif-panel__mark-all"
+                  @click="handleMarkAllRead"
+                >
+                  Mark all read
+                </button>
+              </div>
+
+              <div v-if="loadingNotifications" class="notif-panel__loading">
+                <v-progress-circular indeterminate size="18" />
+              </div>
+
+              <p v-else-if="!notifications.length" class="notif-panel__empty">
+                No notifications yet.
+              </p>
+
+              <button
+                v-for="note in notifications"
+                :key="note.id"
+                type="button"
+                class="notif-item"
+                :class="{ 'notif-item--unread': !note.read }"
+                @click="handleNotificationClick(note)"
+              >
+                <span class="notif-item__dot" :class="{ 'notif-item__dot--unread': !note.read }" />
+                <span class="notif-item__text">
+                  <span class="notif-item__message">{{ note.message }}</span>
+                  <span class="notif-item__time">{{ timeAgo(note.created_at) }}</span>
+                </span>
+              </button>
+            </div>
+          </v-menu>
 
           <div class="topbar__avatar-wrapper">
             <v-menu location="bottom end">
@@ -152,231 +251,5 @@ async function signOut() {
   </div>
 </template>
 
-<style scoped>
-:deep(.v-list-item-title) {
-  font-size: 12px;
-}
-
-.resident-shell {
-  display: flex;
-  min-height: 100vh;
-  background: var(--brgy-paper);
-  font-family: var(--brgy-font-body);
-}
-
-/* Sidebar */
-.sidebar {
-  width: 260px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  background: var(--brgy-navy);
-  padding: 20px 14px;
-}
-
-.sidebar__brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 16px;
-}
-
-.sidebar__logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--brgy-gold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar__brand-name {
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.sidebar__brand-sub {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.72rem;
-  margin: 0;
-}
-
-.sidebar__nav {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sidebar__section-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin: 16px 10px 6px;
-}
-
-.sidebar__section-label:first-child {
-  margin-top: 0;
-}
-
-.sidebar__link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: var(--brgy-radius-sm);
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 0.86rem;
-  text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sidebar__link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-}
-
-.sidebar__link--active {
-  background: var(--brgy-gold);
-  color: var(--brgy-navy);
-  font-weight: 600;
-}
-
-.sidebar__badge {
-  margin-left: auto;
-  background: #e5484d;
-  color: white;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 999px;
-}
-
-.sidebar__signout {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  margin-top: 12px;
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-family: var(--brgy-font-body);
-  font-size: 0.86rem;
-  cursor: pointer;
-  border-radius: var(--brgy-radius-sm);
-}
-
-.sidebar__signout:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-}
-
-/* Body */
-.resident-shell__body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 32px;
-  background: var(--brgy-paper-raised);
-  border-bottom: 1px solid var(--brgy-line);
-}
-
-.topbar__title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--brgy-ink);
-  margin: 0;
-}
-
-.topbar__subtitle {
-  font-size: 0.85rem;
-  color: var(--brgy-ink-muted);
-  margin: 2px 0 0;
-}
-
-.topbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.topbar__new-request {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border: 1px solid var(--brgy-line);
-  border-radius: var(--brgy-radius-sm);
-  color: var(--brgy-ink);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-  background: var(--brgy-paper-raised);
-  transition: border-color 0.15s ease;
-}
-
-.topbar__new-request:hover {
-  border-color: var(--brgy-gold);
-}
-
-.topbar__icon-btn {
-  position: relative;
-  background: none;
-  border: none;
-  color: var(--brgy-ink-muted);
-  cursor: pointer;
-  padding: 6px;
-}
-
-.topbar__icon-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #e5484d;
-}
-
-.topbar__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--brgy-gold);
-  color: var(--brgy-navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-
-.resident-shell__main {
-  flex: 1;
-  padding: 28px 32px 48px;
-}
-
-@media (max-width: 960px) {
-  .sidebar {
-    display: none;
-  }
-}
+<style scoped src="./ResidentLayoutCss.css">
 </style>
