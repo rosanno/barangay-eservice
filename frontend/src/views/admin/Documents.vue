@@ -103,8 +103,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { trackDocumentRequestByNumber } from '@/api/documentRequests'
+
+const route = useRoute()
 
 const trackingNumber = ref('')
 const result = ref(null)
@@ -173,6 +176,13 @@ function formatDate(iso) {
     minute: '2-digit',
   })
 }
+
+onMounted(() => {
+  if (typeof route.query.search === 'string' && route.query.search.trim()) {
+    trackingNumber.value = route.query.search
+    lookup()
+  }
+})
 </script>
 
 <style scoped src="./DashboardCss.css"></style>

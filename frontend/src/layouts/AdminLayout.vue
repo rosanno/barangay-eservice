@@ -33,9 +33,9 @@
           </div>
         </div>
       </div>
-
+ 
       <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 0 16px" />
-
+ 
       <!-- Nav groups -->
       <div class="px-2 pt-3">
         <div class="nav-group-label">Overview</div>
@@ -56,7 +56,7 @@
           </v-list-item>
         </v-list>
       </div>
-
+ 
       <div class="px-2 pt-2">
         <div class="nav-group-label">Services</div>
         <v-list nav density="compact" bg-color="transparent" class="pa-0">
@@ -76,7 +76,7 @@
           </v-list-item>
         </v-list>
       </div>
-
+ 
       <div class="px-2 pt-2">
         <div class="nav-group-label">Admin</div>
         <v-list nav density="compact" bg-color="transparent" class="pa-0">
@@ -92,7 +92,7 @@
           />
         </v-list>
       </div>
-
+ 
       <!-- Footer -->
       <template #append>
         <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 0 16px" />
@@ -108,7 +108,7 @@
         </div>
       </template>
     </v-navigation-drawer>
-
+ 
     <!-- ─── Top bar ───────────────────────────────────────────────── -->
     <v-app-bar
       flat
@@ -120,7 +120,7 @@
         color="#0f1e3d"
         @click="drawerOpen = !drawerOpen"
       />
-
+ 
       <div class="pl-2">
         <div style="color: #1a1a1a; font-size: 15px; font-weight: 600">
           {{ pageTitle }}
@@ -129,9 +129,9 @@
           {{ pageSubtitle }}
         </div>
       </div>
-
+ 
       <v-spacer />
-
+ 
       <!-- New request shortcut -->
       <v-btn
         variant="outlined"
@@ -149,19 +149,59 @@
       >
         New request
       </v-btn>
-
+ 
       <!-- Notifications -->
-      <v-btn
-        icon
-        variant="text"
-        class="mr-1"
-        style="color: #888"
-      >
-        <v-badge color="#e8523a" dot>
-          <v-icon icon="mdi-bell-outline" size="20" />
-        </v-badge>
-      </v-btn>
-
+      <v-menu location="bottom end" @update:model-value="onMenuToggle" min-width="320">
+        <template #activator="{ props }">
+          <v-btn icon variant="text" class="mr-1" style="color: #888" v-bind="props">
+            <v-badge
+              :model-value="unreadCount > 0"
+              :content="unreadCount > 9 ? '9+' : unreadCount"
+              color="#e8523a"
+            >
+              <v-icon icon="mdi-bell-outline" size="20" />
+            </v-badge>
+          </v-btn>
+        </template>
+ 
+        <v-card style="max-height: 380px; overflow-y: auto">
+          <div class="d-flex align-center justify-space-between px-4 py-3" style="border-bottom: 1px solid #f0ede3">
+            <span style="font-size: 13px; font-weight: 600; color: #1a1a1a">Notifications</span>
+            <button
+              v-if="unreadCount > 0"
+              type="button"
+              class="mark-all-btn"
+              @click="handleMarkAllRead"
+            >
+              Mark all read
+            </button>
+          </div>
+ 
+          <div v-if="loadingNotifications" class="d-flex justify-center py-6">
+            <v-progress-circular indeterminate size="20" color="#0f1e3d" />
+          </div>
+ 
+          <p v-else-if="!notifications.length" class="empty-note">
+            No notifications yet.
+          </p>
+ 
+          <router-link
+            v-for="note in notifications"
+            :key="note.id"
+            :to="{ path: '/admin/documents', query: { search: note.tracking_number } }"
+            class="notification-item"
+            :class="{ 'notification-item--unread': !note.read }"
+            @click="handleNotificationClick(note)"
+          >
+            <span class="notification-dot" :class="{ 'notification-dot--unread': !note.read }" />
+            <span class="notification-text">
+              <span class="notification-message">{{ note.message }}</span>
+              <span class="notification-time">{{ timeAgo(note.created_at) }}</span>
+            </span>
+          </router-link>
+        </v-card>
+      </v-menu>
+ 
       <!-- User menu -->
       <v-menu>
         <template #activator="{ props }">
@@ -193,7 +233,7 @@
         </v-list>
       </v-menu>
     </v-app-bar>
-
+ 
     <!-- ─── Main content ───────────────────────────────────────────── -->
     <v-main style="background: #f4f2ed">
       <div class="pa-5 pa-md-7">
@@ -232,10 +272,8 @@ async function loadBadgeCounts() {
   } catch {
     pendingRequestsCount.value = 0
   }
-
+ 
   try {
-    // Only "scheduled" (not yet completed/cancelled) counts as something
-    // still needing attention today.
     const data = await fetchAdminAppointments({ status: 'scheduled' })
     todaysAppointmentsCount.value = data.length
   } catch {
@@ -243,7 +281,64 @@ async function loadBadgeCounts() {
   }
 }
 
-onMounted(loadBadgeCounts)
+// ── Notifications ──────────────────────────────────────────────────
+const notifications = ref([])
+const unreadCount = ref(0)
+const loadingNotifications = ref(false)
+ 
+async function loadNotifications() {
+  loadingNotifications.value = true
+  try {
+    const { data, unread_count } = await fetchNotifications()
+    notifications.value = data
+    unreadCount.value = unread_count
+  } catch {
+    notifications.value = []
+  } finally {
+    loadingNotifications.value = false
+  }
+}
+ 
+function onMenuToggle(isOpen) {
+  if (isOpen) loadNotifications()
+}
+ 
+async function handleNotificationClick(note) {
+  if (!note.read) {
+    note.read = true
+    unreadCount.value = Math.max(0, unreadCount.value - 1)
+    try {
+      await markNotificationRead(note.id)
+    } catch {
+      // Non-critical — the list will self-correct next time it's opened.
+    }
+  }
+}
+ 
+async function handleMarkAllRead() {
+  notifications.value = notifications.value.map((n) => ({ ...n, read: true }))
+  unreadCount.value = 0
+  try {
+    await markAllNotificationsRead()
+  } catch {
+    // Non-critical — next open will reflect the server's real state.
+  }
+}
+ 
+function timeAgo(iso) {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
+ 
+onMounted(() => {
+  loadBadgeCounts()
+  loadNotifications() // populates the badge count on load, not just on open
+})
 
 const primaryNav = computed(() => [
   { label: 'Dashboard', to: '/admin/dashboard', icon: 'mdi-view-dashboard-outline' },
