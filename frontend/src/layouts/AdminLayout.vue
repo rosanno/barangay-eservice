@@ -250,6 +250,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
 import { fetchAdminAppointments } from '@/api/adminAppointments'
+import { fetchNotifications } from '@/api/notifications'
 
 const { mdAndUp } = useDisplay()
 const route = useRoute()
