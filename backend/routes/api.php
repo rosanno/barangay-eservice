@@ -48,6 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{appointment}/cancel', [AppointmentController::class, 'cancel']);
     });
 
+    // Notifications — belongs here, not under /admin, since residents,
+    // staff, and admin all need to read their own notifications.
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::post('/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+    });
+
     /*
     |----------------------------------------------------------------------
     | Admin-only routes
@@ -73,15 +81,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::prefix('appointments')->group(function () {
             Route::get('/', [AppointmentAdminController::class, 'index']);
-            Route::patch('/{appointment}/status', [AppointmentAdminController::class, 'updateStatus']); // ← add this line
+            Route::patch('/{appointment}/status', [AppointmentAdminController::class, 'updateStatus']);
         });
 
         Route::get('reports', [ReportsAdminController::class, 'index']);
-
-        Route::prefix('notifications')->group(function () {
-            Route::get('/', [NotificationController::class, 'index']);
-            Route::post('/{notification}/read', [NotificationController::class, 'markAsRead']);
-            Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
-        });
     });
 });
