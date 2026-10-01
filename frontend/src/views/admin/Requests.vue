@@ -67,7 +67,14 @@
         <v-table v-else density="comfortable">
           <thead>
             <tr>
-              <th v-for="col in tableColumns" :key="col" class="table-head">{{ col }}</th>
+              <th
+                v-for="col in tableColumns"
+                :key="col || 'actions'"
+                class="table-head"
+                :class="{ 'table-head--actions': !col }"
+              >
+                {{ col }}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -92,29 +99,50 @@
               <td style="font-size: 11px; color: #aaa; padding: 12px 8px; white-space: nowrap">
                 {{ req.date }}
               </td>
-              <td style="padding: 12px 5px; text-align: right; white-space: nowrap">
-                <v-btn icon variant="text" size="small" @click="openView(req)">
-                  <v-icon icon="mdi-eye-outline" size="18" style="color: #888" />
-                </v-btn>
-                <v-menu v-if="req.transitions.length">
-                  <template #activator="{ props }">
-                    <v-btn icon variant="text" size="small" v-bind="props">
-                      <v-icon icon="mdi-dots-vertical" size="18" style="color: #888" />
-                    </v-btn>
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item
-                      v-for="target in req.transitions"
-                      :key="target"
-                      @click="handleTransition(req, target)"
-                    >
-                      <v-list-item-title style="font-size: 13px">
-                        {{ TRANSITION_LABELS[target] }}
-                      </v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-                <span v-else style="font-size: 11px; color: #ccc; padding: 0 8px">—</span>
+
+              <!-- Actions -->
+              <td class="actions-cell">
+                <div class="row-actions">
+                  <v-tooltip text="View details" location="top">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        icon="mdi-eye-outline"
+                        variant="text"
+                        density="comfortable"
+                        class="action-btn"
+                        aria-label="View details"
+                        @click="openView(req)"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-menu v-if="req.transitions.length">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        icon="mdi-dots-vertical"
+                        variant="text"
+                        density="comfortable"
+                        class="action-btn"
+                        aria-label="More actions"
+                      />
+                    </template>
+                    <v-list density="compact">
+                      <v-list-item
+                        v-for="target in req.transitions"
+                        :key="target"
+                        @click="handleTransition(req, target)"
+                      >
+                        <v-list-item-title style="font-size: 13px">
+                          {{ TRANSITION_LABELS[target] }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                  <!-- keeps the eye icon aligned across rows when there's no menu -->
+                  <span v-else class="action-btn action-btn--spacer" />
+                </div>
               </td>
             </tr>
           </tbody>
@@ -208,6 +236,7 @@
             <p style="font-size: 11px; color: #999; margin: -4px 0 10px">
               Print this on the physical document — scanning it confirms authenticity without needing an account.
             </p>
+            <DocumentQrCode :tracking-number="viewDialog.data.tracking_number" />
           </template>
         </v-card-text>
 
@@ -275,14 +304,12 @@ import {
   updateAdminDocumentRequestStatus,
 } from '@/api/adminDocumentRequests'
 import { fetchDocumentTypes } from '@/api/documentRequests'
+import DocumentQrCode from '@/components/DocumentQrCode.vue'
 
 const route = useRoute()
 
 const tableColumns = ['Resident', 'Document type', 'Tracking #', 'Status', 'Date', '']
 
-// Mirrors DocumentRequestStatus::allowedTransitions() on the backend —
-// the backend is still the source of truth and rejects anything invalid
-// with a 422; this list is only here to decide which menu items to show.
 const TRANSITIONS = {
   pending: ['processing', 'rejected', 'cancelled'],
   processing: ['ready_for_pickup', 'rejected'],
@@ -519,8 +546,7 @@ onMounted(() => {
 
 <style scoped src="./DashboardCss.css"></style>
 
-<style scoped src="./RequestsCss.css">
-</style>
+<style scoped src="./RequestsCss.css"></style>
 
 <style>
 .filter-select-menu .v-list-item-title {
@@ -528,5 +554,50 @@ onMounted(() => {
 }
 .filter-select-menu .v-list-item {
   min-height: 34px;
+}
+
+/* ── Row layout ── */
+.table-row td {
+  vertical-align: middle;
+  border-bottom: 1px solid #f2f2f2;
+}
+.table-row:last-child td {
+  border-bottom: none;
+}
+.table-row:hover {
+  background: #fafbfc;
+}
+
+/* ── Action buttons ── */
+.table-head--actions {
+  width: 84px;
+}
+.actions-cell {
+  padding: 8px 5px;
+  width: 84px;
+}
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #8a8f98;
+  transition: background 0.15s, color 0.15s;
+}
+.action-btn .v-icon {
+  font-size: 18px;
+}
+.action-btn:hover {
+  background: #f1f3f7;
+  color: #0f1e3d;
+}
+.action-btn--spacer {
+  display: inline-block;
+  pointer-events: none;
 }
 </style>

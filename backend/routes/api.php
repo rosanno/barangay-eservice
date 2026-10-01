@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
 use App\Http\Controllers\Api\DocumentTypeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\VerifyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/verify/{trackingNumber}', [VerifyController::class, 'show']);
 
 /*
 |--------------------------------------------------------------------------

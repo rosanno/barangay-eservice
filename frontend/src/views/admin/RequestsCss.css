@@ -13,9 +13,6 @@
   border-bottom: 1px solid #f7f5f0;
 }
 
-/* Vuetify's inputs default to 1rem internally, larger than the rest of
-   this page's 11-13px scale — targeting the internal elements directly
-   since a plain style="font-size" on the component doesn't reach them. */
 .filter-input :deep(.v-field__input),
 .filter-input :deep(input),
 .filter-input :deep(.v-select__selection-text),
