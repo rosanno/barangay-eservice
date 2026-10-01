@@ -92,7 +92,10 @@
               <td style="font-size: 11px; color: #aaa; padding: 12px 8px; white-space: nowrap">
                 {{ req.date }}
               </td>
-              <td style="padding: 12px 5px; text-align: right">
+              <td style="padding: 12px 5px; text-align: right; white-space: nowrap">
+                <v-btn icon variant="text" size="small" @click="openView(req)">
+                  <v-icon icon="mdi-eye-outline" size="18" style="color: #888" />
+                </v-btn>
                 <v-menu v-if="req.transitions.length">
                   <template #activator="{ props }">
                     <v-btn icon variant="text" size="small" v-bind="props">
@@ -111,7 +114,7 @@
                     </v-list-item>
                   </v-list>
                 </v-menu>
-                <span v-else style="font-size: 11px; color: #ccc">—</span>
+                <span v-else style="font-size: 11px; color: #ccc; padding: 0 8px">—</span>
               </td>
             </tr>
           </tbody>
@@ -128,6 +131,101 @@
         </div>
       </v-card-text>
     </v-card>
+
+    <!-- ─── View details dialog ──────────────────────────────────── -->
+    <v-dialog v-model="viewDialog.open" max-width="560">
+      <v-card>
+        <div v-if="viewDialog.loading" class="d-flex justify-center py-10">
+          <v-progress-circular indeterminate size="24" color="#0f1e3d" />
+        </div>
+
+        <v-card-text v-else-if="viewDialog.data" class="pa-5">
+          <div class="d-flex align-center justify-space-between mb-1">
+            <span style="font-size: 15px; font-weight: 600; color: #1a1a1a">
+              {{ viewDialog.data.document_type.name }}
+            </span>
+            <span class="status-chip" :class="STATUS_META[viewDialog.data.status]?.class">
+              {{ viewDialog.data.status_label }}
+            </span>
+          </div>
+          <p style="font-size: 12px; color: #999; margin: 0 0 18px">
+            {{ viewDialog.data.tracking_number }}
+          </p>
+
+          <div class="fact-grid">
+            <div class="fact">
+              <span class="fact__label">Resident</span>
+              <span class="fact__value">{{ viewDialog.data.requested_by?.name || '—' }}</span>
+            </div>
+            <div class="fact">
+              <span class="fact__label">Purpose</span>
+              <span class="fact__value">{{ viewDialog.data.purpose }}</span>
+            </div>
+            <div class="fact">
+              <span class="fact__label">Fee</span>
+              <span class="fact__value">
+                {{ viewDialog.data.fee > 0 ? `₱${viewDialog.data.fee.toFixed(2)}` : 'No fee' }}
+                <span class="fact__sub">({{ viewDialog.data.payment_status }})</span>
+              </span>
+            </div>
+            <div v-if="viewDialog.data.remarks" class="fact">
+              <span class="fact__label">Remarks</span>
+              <span class="fact__value">{{ viewDialog.data.remarks }}</span>
+            </div>
+          </div>
+
+          <div v-if="viewDialog.data.rejection_reason" class="rejection-note">
+            <v-icon icon="mdi-alert-circle-outline" size="15" style="color: #c0392b" />
+            {{ viewDialog.data.rejection_reason }}
+          </div>
+
+          <p class="section-label">Timeline</p>
+          <ul class="timeline">
+            <li
+              v-for="step in viewTimelineSteps"
+              :key="step.key"
+              class="timeline__item"
+              :class="{ 'timeline__item--done': step.at, 'timeline__item--current': step.isCurrent }"
+            >
+              <span class="timeline__dot" />
+              <span class="timeline__label">{{ step.label }}</span>
+              <span class="timeline__date">{{ step.at ? formatDateTime(step.at) : '—' }}</span>
+            </li>
+          </ul>
+
+          <template v-if="viewDialog.data.attachments?.length">
+            <p class="section-label">Attachments</p>
+            <ul class="attachment-list">
+              <li v-for="file in viewDialog.data.attachments" :key="file.id">
+                <a :href="file.url" target="_blank" rel="noopener">{{ file.original_name }}</a>
+                <span v-if="file.label" class="attachment-list__label">— {{ file.label }}</span>
+              </li>
+            </ul>
+          </template>
+
+          <template v-if="viewDialog.data.status === 'released'">
+            <p class="section-label">Verification QR Code</p>
+            <p style="font-size: 11px; color: #999; margin: -4px 0 10px">
+              Print this on the physical document — scanning it confirms authenticity without needing an account.
+            </p>
+          </template>
+        </v-card-text>
+
+        <v-card-actions v-if="!viewDialog.loading" class="px-5 pb-5">
+          <v-btn
+            v-for="target in viewTransitions"
+            :key="target"
+            size="small"
+            variant="tonal"
+            @click="handleTransition(viewDialog.sourceRow, target); viewDialog.open = false"
+          >
+            {{ TRANSITION_LABELS[target] }}
+          </v-btn>
+          <v-spacer />
+          <v-btn variant="text" @click="viewDialog.open = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- ─── Rejection reason dialog ──────────────────────────────── -->
     <v-dialog v-model="rejectDialog.open" max-width="420">
@@ -169,10 +267,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   fetchAdminDocumentRequests,
+  fetchAdminDocumentRequest,
   updateAdminDocumentRequestStatus,
 } from '@/api/adminDocumentRequests'
 import { fetchDocumentTypes } from '@/api/documentRequests'
@@ -239,6 +338,13 @@ const rejectDialog = reactive({
   reason: '',
   target: null,
   submitting: false,
+})
+
+const viewDialog = reactive({
+  open: false,
+  loading: false,
+  data: null,
+  sourceRow: null,
 })
 
 const snackbar = reactive({ open: false, text: '', color: 'success' })
@@ -332,6 +438,50 @@ async function submitRejection() {
   }
 }
 
+// ── View details dialog ──────────────────────────────────────────────
+async function openView(req) {
+  viewDialog.sourceRow = req
+  viewDialog.open = true
+  viewDialog.loading = true
+  viewDialog.data = null
+  try {
+    viewDialog.data = await fetchAdminDocumentRequest(req.id)
+  } catch {
+    showSnackbar("Could not load this request's details.", 'error')
+    viewDialog.open = false
+  } finally {
+    viewDialog.loading = false
+  }
+}
+
+const viewTransitions = computed(() => TRANSITIONS[viewDialog.data?.status] || [])
+
+const viewTimelineSteps = computed(() => {
+  if (!viewDialog.data) return []
+  const t = viewDialog.data.timeline
+  const status = viewDialog.data.status
+
+  if (status === 'rejected') {
+    return [
+      { key: 'requested', label: 'Requested', at: t.requested_at },
+      { key: 'rejected', label: 'Rejected', at: t.updated_at, isCurrent: true },
+    ]
+  }
+  if (status === 'cancelled') {
+    return [
+      { key: 'requested', label: 'Requested', at: t.requested_at },
+      { key: 'cancelled', label: 'Cancelled', at: t.cancelled_at, isCurrent: true },
+    ]
+  }
+
+  return [
+    { key: 'requested', label: 'Requested', at: t.requested_at },
+    { key: 'processing', label: 'Processing', at: t.processed_at, isCurrent: status === 'processing' },
+    { key: 'ready', label: 'Ready for Pickup', at: t.ready_at, isCurrent: status === 'ready_for_pickup' },
+    { key: 'released', label: 'Released', at: t.released_at, isCurrent: status === 'released' },
+  ]
+})
+
 function showSnackbar(text, color = 'success') {
   snackbar.text = text
   snackbar.color = color
@@ -352,6 +502,15 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
 }
 
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 onMounted(() => {
   loadRequests(1)
   loadDocumentTypeOptions()
@@ -360,42 +519,10 @@ onMounted(() => {
 
 <style scoped src="./DashboardCss.css"></style>
 
-<style scoped>
-.table-head {
-  font-size: 11px;
-  font-weight: 500;
-  color: #999;
-  border-bottom: 1px solid #f0ede3;
-  padding: 0 8px 8px 0;
-  text-transform: none;
-  letter-spacing: 0;
-  text-align: left;
-}
-
-.table-row {
-  border-bottom: 1px solid #f7f5f0;
-}
-
-/* Vuetify's inputs default to 1rem internally, larger than the rest of
-   this page's 11-13px scale — targeting the internal elements directly
-   since a plain style="font-size" on the component doesn't reach them. */
-.filter-input :deep(.v-field__input),
-.filter-input :deep(input),
-.filter-input :deep(.v-select__selection-text),
-.filter-input :deep(.v-field__prepend-inner .v-icon) {
-  font-size: 12.5px;
-}
-
-.filter-input :deep(.v-field__input) {
-  min-height: 36px;
-}
+<style scoped src="./RequestsCss.css">
 </style>
 
 <style>
-/* Unscoped on purpose: v-select's dropdown menu is teleported outside this
-   component's DOM tree, so scoped styles (even with :deep()) can't reach
-   it. The .filter-select-menu class (set via menu-props above) keeps this
-   from affecting any other dropdown in the app. */
 .filter-select-menu .v-list-item-title {
   font-size: 12.5px;
 }

@@ -10,6 +10,15 @@ export function fetchAdminDocumentRequests(params = {}) {
 }
 
 /**
+ * Single-request detail, for the admin "View" dialog. Hits the existing
+ * GET /admin/document-requests/{uuid} — already built, just never had a
+ * frontend caller until now.
+ */
+export function fetchAdminDocumentRequest(uuid) {
+  return api.get(`/admin/document-requests/${uuid}`).then((res) => res.data.data)
+}
+
+/**
  * Move a request to a new status. The backend enforces which transitions
  * are actually allowed from the request's current status (see
  * DocumentRequestStatus::allowedTransitions() / DocumentRequestService) —
