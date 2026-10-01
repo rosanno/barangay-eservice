@@ -12,6 +12,7 @@ import { authRoutes } from './router/auth-routes'
 import { adminRoutes } from './router/admin-routes'
 import { documentRoutes } from './router/document-routes.js'
 import { residentRoutes } from './router/resident-routes.js'
+import { publicRoutes } from './router/public-routes.js'
 import { useAuthStore } from '@/store/auth'   // ← add this
 
 const routes = [
@@ -19,6 +20,7 @@ const routes = [
   ...adminRoutes,
   ...residentRoutes,
   ...documentRoutes,
+  ...publicRoutes
 ]
 
 const router = createRouter({
