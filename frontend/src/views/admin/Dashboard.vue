@@ -226,6 +226,9 @@
         </v-card>
       </v-col>
     </v-row>
+     <v-snackbar v-model="snackbar.show" color="#0f1e3d" location="top right" :timeout="5000">
+      {{ snackbar.text }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -234,6 +237,32 @@ import { computed, onMounted, ref } from 'vue'
 import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
 import { fetchAdminAppointments } from '@/api/adminAppointments'
 import StatCard from '@/components/dashboard/StatCard.vue'
+
+import { useAdminRealtime } from '@/composables/useAdminRealtime'
+
+const snackbar = ref({ show: false, text: '' })
+
+function refreshRequests() {
+  loadStats({ silent: true })
+  loadRecentRequests({ silent: true })
+}
+
+useAdminRealtime({
+  onSubmitted(payload) {
+    refreshRequests()
+    snackbar.value = {
+      show: true,
+      text: `New ${payload.type} request from ${payload.resident}`,
+    }
+  },
+  onStatusChanged() {
+    refreshRequests()
+  },
+  onReconnect() {
+    refreshRequests()
+    loadAppointments()
+  },
+})
 
 // ── Stat cards ──────────────────────────────────────────────────────
 const totalRequests = ref(0)

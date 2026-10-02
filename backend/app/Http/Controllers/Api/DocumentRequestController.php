@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\ClearanceRequestSubmitted;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDocumentRequestRequest;
 use App\Http\Resources\DocumentRequestResource;
@@ -25,7 +26,7 @@ class DocumentRequestController extends Controller
         $requests = DocumentRequest::query()
             ->with(['documentType', 'attachments'])
             ->where('user_id', $request->user()->id)
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->string('status')))
             ->latest()
             ->paginate($request->integer('per_page', 15));
 
@@ -35,6 +36,8 @@ class DocumentRequestController extends Controller
     public function store(StoreDocumentRequestRequest $request): JsonResponse
     {
         $documentRequest = $this->service->create($request->user(), $request->validated());
+
+        ClearanceRequestSubmitted::dispatch($documentRequest);
 
         return (new DocumentRequestResource($documentRequest))
             ->response()
