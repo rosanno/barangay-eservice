@@ -160,103 +160,14 @@
       </v-card-text>
     </v-card>
 
-    <!-- ─── View details dialog ──────────────────────────────────── -->
-    <v-dialog v-model="viewDialog.open" max-width="560">
-      <v-card>
-        <div v-if="viewDialog.loading" class="d-flex justify-center py-10">
-          <v-progress-circular indeterminate size="24" color="#0f1e3d" />
-        </div>
+    <!-- ─── View details — shared component, also used by Residents.vue ─ -->
+    <DocumentRequestDetailDialog
+      v-model="viewDialogOpen"
+      :request-id="viewingId"
+      @updated="loadRequests(filters.page)"
+    />
 
-        <v-card-text v-else-if="viewDialog.data" class="pa-5">
-          <div class="d-flex align-center justify-space-between mb-1">
-            <span style="font-size: 15px; font-weight: 600; color: #1a1a1a">
-              {{ viewDialog.data.document_type.name }}
-            </span>
-            <span class="status-chip" :class="STATUS_META[viewDialog.data.status]?.class">
-              {{ viewDialog.data.status_label }}
-            </span>
-          </div>
-          <p style="font-size: 12px; color: #999; margin: 0 0 18px">
-            {{ viewDialog.data.tracking_number }}
-          </p>
-
-          <div class="fact-grid">
-            <div class="fact">
-              <span class="fact__label">Resident</span>
-              <span class="fact__value">{{ viewDialog.data.requested_by?.name || '—' }}</span>
-            </div>
-            <div class="fact">
-              <span class="fact__label">Purpose</span>
-              <span class="fact__value">{{ viewDialog.data.purpose }}</span>
-            </div>
-            <div class="fact">
-              <span class="fact__label">Fee</span>
-              <span class="fact__value">
-                {{ viewDialog.data.fee > 0 ? `₱${viewDialog.data.fee.toFixed(2)}` : 'No fee' }}
-                <span class="fact__sub">({{ viewDialog.data.payment_status }})</span>
-              </span>
-            </div>
-            <div v-if="viewDialog.data.remarks" class="fact">
-              <span class="fact__label">Remarks</span>
-              <span class="fact__value">{{ viewDialog.data.remarks }}</span>
-            </div>
-          </div>
-
-          <div v-if="viewDialog.data.rejection_reason" class="rejection-note">
-            <v-icon icon="mdi-alert-circle-outline" size="15" style="color: #c0392b" />
-            {{ viewDialog.data.rejection_reason }}
-          </div>
-
-          <p class="section-label">Timeline</p>
-          <ul class="timeline">
-            <li
-              v-for="step in viewTimelineSteps"
-              :key="step.key"
-              class="timeline__item"
-              :class="{ 'timeline__item--done': step.at, 'timeline__item--current': step.isCurrent }"
-            >
-              <span class="timeline__dot" />
-              <span class="timeline__label">{{ step.label }}</span>
-              <span class="timeline__date">{{ step.at ? formatDateTime(step.at) : '—' }}</span>
-            </li>
-          </ul>
-
-          <template v-if="viewDialog.data.attachments?.length">
-            <p class="section-label">Attachments</p>
-            <ul class="attachment-list">
-              <li v-for="file in viewDialog.data.attachments" :key="file.id">
-                <a :href="file.url" target="_blank" rel="noopener">{{ file.original_name }}</a>
-                <span v-if="file.label" class="attachment-list__label">— {{ file.label }}</span>
-              </li>
-            </ul>
-          </template>
-
-          <template v-if="viewDialog.data.status === 'released'">
-            <p class="section-label">Verification QR Code</p>
-            <p style="font-size: 11px; color: #999; margin: -4px 0 10px">
-              Print this on the physical document — scanning it confirms authenticity without needing an account.
-            </p>
-            <DocumentQrCode :tracking-number="viewDialog.data.tracking_number" />
-          </template>
-        </v-card-text>
-
-        <v-card-actions v-if="!viewDialog.loading" class="px-5 pb-5">
-          <v-btn
-            v-for="target in viewTransitions"
-            :key="target"
-            size="small"
-            variant="tonal"
-            @click="handleTransition(viewDialog.sourceRow, target); viewDialog.open = false"
-          >
-            {{ TRANSITION_LABELS[target] }}
-          </v-btn>
-          <v-spacer />
-          <v-btn variant="text" @click="viewDialog.open = false">Close</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- ─── Rejection reason dialog ──────────────────────────────── -->
+    <!-- ─── Rejection reason dialog (list-level ⋮ menu actions) ──── -->
     <v-dialog v-model="rejectDialog.open" max-width="420">
       <v-card>
         <v-card-title style="font-size: 15px">Reject request</v-card-title>
@@ -296,15 +207,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   fetchAdminDocumentRequests,
-  fetchAdminDocumentRequest,
   updateAdminDocumentRequestStatus,
 } from '@/api/adminDocumentRequests'
 import { fetchDocumentTypes } from '@/api/documentRequests'
-import DocumentQrCode from '@/components/DocumentQrCode.vue'
+import DocumentRequestDetailDialog from '@/components/DocumentRequestDetailDialog.vue'
 
 const route = useRoute()
 
@@ -367,12 +277,11 @@ const rejectDialog = reactive({
   submitting: false,
 })
 
-const viewDialog = reactive({
-  open: false,
-  loading: false,
-  data: null,
-  sourceRow: null,
-})
+// Everything the view dialog needs to fetch/render/act on a request now
+// lives inside DocumentRequestDetailDialog — this page just owns which
+// one is open.
+const viewDialogOpen = ref(false)
+const viewingId = ref(null)
 
 const snackbar = reactive({ open: false, text: '', color: 'success' })
 
@@ -465,49 +374,10 @@ async function submitRejection() {
   }
 }
 
-// ── View details dialog ──────────────────────────────────────────────
-async function openView(req) {
-  viewDialog.sourceRow = req
-  viewDialog.open = true
-  viewDialog.loading = true
-  viewDialog.data = null
-  try {
-    viewDialog.data = await fetchAdminDocumentRequest(req.id)
-  } catch {
-    showSnackbar("Could not load this request's details.", 'error')
-    viewDialog.open = false
-  } finally {
-    viewDialog.loading = false
-  }
+function openView(req) {
+  viewingId.value = req.id
+  viewDialogOpen.value = true
 }
-
-const viewTransitions = computed(() => TRANSITIONS[viewDialog.data?.status] || [])
-
-const viewTimelineSteps = computed(() => {
-  if (!viewDialog.data) return []
-  const t = viewDialog.data.timeline
-  const status = viewDialog.data.status
-
-  if (status === 'rejected') {
-    return [
-      { key: 'requested', label: 'Requested', at: t.requested_at },
-      { key: 'rejected', label: 'Rejected', at: t.updated_at, isCurrent: true },
-    ]
-  }
-  if (status === 'cancelled') {
-    return [
-      { key: 'requested', label: 'Requested', at: t.requested_at },
-      { key: 'cancelled', label: 'Cancelled', at: t.cancelled_at, isCurrent: true },
-    ]
-  }
-
-  return [
-    { key: 'requested', label: 'Requested', at: t.requested_at },
-    { key: 'processing', label: 'Processing', at: t.processed_at, isCurrent: status === 'processing' },
-    { key: 'ready', label: 'Ready for Pickup', at: t.ready_at, isCurrent: status === 'ready_for_pickup' },
-    { key: 'released', label: 'Released', at: t.released_at, isCurrent: status === 'released' },
-  ]
-})
 
 function showSnackbar(text, color = 'success') {
   snackbar.text = text
@@ -527,15 +397,6 @@ function initials(name) {
 function formatDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
-}
-
-function formatDateTime(iso) {
-  return new Date(iso).toLocaleString('en-PH', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
 }
 
 onMounted(() => {

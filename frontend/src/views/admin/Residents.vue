@@ -73,12 +73,9 @@
                 {{ resident.requestCount }}
               </td>
               <td style="padding: 12px 8px; text-align: right">
-                <router-link
-                  :to="{ path: '/admin/clearances', query: { search: resident.name } }"
-                  class="view-link"
-                >
+                <button type="button" class="view-link" @click="openRequestsList(resident)">
                   View requests
-                </router-link>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -95,12 +92,59 @@
         </div>
       </v-card-text>
     </v-card>
+
+    <!-- ─── Per-resident requests list dialog ───────────────────── -->
+    <v-dialog v-model="requestsDialog.open" max-width="520">
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between" style="font-size: 14px; font-weight: 600">
+          {{ requestsDialog.resident?.name }}'s Requests
+          <v-btn icon variant="text" size="small" @click="requestsDialog.open = false">
+            <v-icon icon="mdi-close" size="18" />
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="pa-0">
+          <div v-if="requestsDialog.loading" class="d-flex justify-center py-8">
+            <v-progress-circular indeterminate size="22" color="#0f1e3d" />
+          </div>
+
+          <p v-else-if="!requestsDialog.requests.length" style="font-size: 12.5px; color: #999; padding: 24px 20px">
+            This resident hasn't made any document requests yet.
+          </p>
+
+          <button
+            v-for="item in requestsDialog.requests"
+            :key="item.id"
+            type="button"
+            class="resident-request-row"
+            @click="openDetail(item)"
+          >
+            <span class="resident-request-row__main">
+              <span class="resident-request-row__type">{{ item.type }}</span>
+              <span class="resident-request-row__tracking">{{ item.trackingNumber }}</span>
+            </span>
+            <span class="status-chip" :class="item.statusClass">{{ item.statusLabel }}</span>
+          </button>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- ─── Full request detail — same shared component Clearances.vue
+         uses, so the view here is identical in capability (status
+         actions, QR code, timeline) rather than a stripped-down copy ── -->
+    <DocumentRequestDetailDialog
+      v-model="detailDialogOpen"
+      :request-id="viewingId"
+      @updated="reloadRequestsDialog"
+    />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { fetchAdminResidents } from '@/api/adminResidents'
+import { fetchAdminDocumentRequests } from '@/api/adminDocumentRequests'
+import DocumentRequestDetailDialog from '@/components/DocumentRequestDetailDialog.vue'
 
 const tableColumns = ['Name', 'Email', 'Purok', 'Sex / Age', 'Requests', '']
 
@@ -110,6 +154,15 @@ const AVATAR_PALETTE = [
   { bg: '#fff3e0', text: '#e67e22' },
   { bg: '#fff9ed', text: '#a07020' },
 ]
+
+const STATUS_META = {
+  pending: { label: 'Pending', class: 'status-pending' },
+  processing: { label: 'Processing', class: 'status-processing' },
+  ready_for_pickup: { label: 'Ready', class: 'status-ready' },
+  released: { label: 'Released', class: 'status-approved' },
+  rejected: { label: 'Rejected', class: 'status-rejected' },
+  cancelled: { label: 'Cancelled', class: 'status-rejected' },
+}
 
 const search = ref('')
 const page = ref(1)
@@ -156,6 +209,58 @@ async function loadResidents(targetPage = page.value) {
   }
 }
 
+// ── Per-resident requests dialog ───────────────────────────────────
+const requestsDialog = reactive({
+  open: false,
+  loading: false,
+  resident: null,
+  requests: [],
+})
+
+async function openRequestsList(resident) {
+  requestsDialog.resident = resident
+  requestsDialog.open = true
+  await loadResidentRequests(resident.id)
+}
+
+async function loadResidentRequests(residentId) {
+  requestsDialog.loading = true
+  try {
+    // user_id is an exact match — unlike a name search, this can never
+    // pull in a different resident who happens to share a name.
+    const { data } = await fetchAdminDocumentRequests({ user_id: residentId, per_page: 50 })
+
+    requestsDialog.requests = data.map((item) => {
+      const meta = STATUS_META[item.status] || { label: item.status, class: 'status-pending' }
+      return {
+        id: item.id,
+        type: item.document_type.name,
+        trackingNumber: item.tracking_number,
+        statusLabel: meta.label,
+        statusClass: meta.class,
+      }
+    })
+  } catch {
+    requestsDialog.requests = []
+  } finally {
+    requestsDialog.loading = false
+  }
+}
+
+function reloadRequestsDialog() {
+  if (requestsDialog.resident) loadResidentRequests(requestsDialog.resident.id)
+  loadResidents(page.value) // request counts on the main table may have shifted
+}
+
+// ── Full detail dialog (shared component) ──────────────────────────
+const detailDialogOpen = ref(false)
+const viewingId = ref(null)
+
+function openDetail(item) {
+  viewingId.value = item.id
+  detailDialogOpen.value = true
+}
+
 function initials(name) {
   return name
     .split(' ')
@@ -170,5 +275,85 @@ onMounted(() => loadResidents(1))
 
 <style scoped src="./DashboardCss.css"></style>
 
-<style scoped src="./ResidentsCss.css">
+<style scoped>
+.table-head {
+  font-size: 11px;
+  font-weight: 500;
+  color: #999;
+  border-bottom: 1px solid #f0ede3;
+  padding: 0 8px 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+}
+
+.table-row {
+  border-bottom: 1px solid #f7f5f0;
+}
+
+.filter-input :deep(.v-field__input),
+.filter-input :deep(input) {
+  font-size: 12.5px;
+}
+
+.search-field {
+  width: 200px;
+  max-width: 100%;
+  flex-shrink: 1;
+}
+
+@media (max-width: 540px) {
+  .search-field {
+    width: 100%;
+  }
+}
+
+.view-link {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #0f1e3d;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.resident-request-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f7f5f0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resident-request-row:last-child {
+  border-bottom: none;
+}
+
+.resident-request-row:hover {
+  background: #faf9f6;
+}
+
+.resident-request-row__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.resident-request-row__type {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.resident-request-row__tracking {
+  font-size: 11px;
+  color: #999;
+}
 </style>

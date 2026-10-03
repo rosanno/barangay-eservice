@@ -42,6 +42,7 @@ class DocumentRequestAdminController extends Controller
             ->with(['documentType', 'user', 'attachments'])
             ->when($request->filled('status'), fn($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('document_type_id'), fn($q) => $q->where('document_type_id', $request->integer('document_type_id')))
+            ->when($request->filled('user_id'), fn($q) => $q->where('user_id', $request->integer('user_id')))
             ->when($request->filled('search'), function ($q) use ($request) {
                 $term = '%' . $request->string('search') . '%';
                 $q->where(function ($sub) use ($term) {
