@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Events\ClearanceRequestStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Storeadmindocumentrequestrequest;
 use App\Http\Requests\UpdateDocumentRequestStatusRequest;
@@ -64,6 +65,8 @@ class DocumentRequestAdminController extends Controller
     public function updateStatus(UpdateDocumentRequestStatusRequest $request, DocumentRequest $documentRequest): DocumentRequestResource
     {
         $updated = $this->service->updateStatus($documentRequest, $request->user(), $request->validated());
+
+        ClearanceRequestStatusChanged::dispatch($updated);
 
         return new DocumentRequestResource($updated);
     }
