@@ -66,7 +66,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users', [AdminUserController::class, 'store']);
+        Route::get('/users/{user}', [AdminUserController::class, 'show']);
+        Route::put('/users/{user}', [AdminUserController::class, 'update']);
         Route::patch('/users/{user}/status', [AdminUserController::class, 'updateStatus']);
+        Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword']);
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
 
         // Admin-facing document requests → resolves to /api/admin/document-requests/...

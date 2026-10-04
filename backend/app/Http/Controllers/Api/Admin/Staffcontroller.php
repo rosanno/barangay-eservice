@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StaffRequest;
@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-class AdminUserController extends Controller
+class StaffController extends Controller
 {
     private const SORTABLE = ['name', 'email', 'role', 'last_login_at', 'created_at'];
 
