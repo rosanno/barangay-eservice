@@ -21,6 +21,7 @@
           prepend-inner-icon="mdi-magnify"
           hide-details
           class="filter-input search-field"
+          style="width: 300px"
           @update:model-value="onSearchInput"
         />
         <v-btn
