@@ -293,20 +293,14 @@ onMounted(() => loadResidents(1))
 }
 
 .filter-input :deep(.v-field__input),
-.filter-input :deep(input) {
+.filter-input :deep(input),
+.filter-input :deep(.v-select__selection-text),
+.filter-input :deep(.v-field__prepend-inner .v-icon) {
   font-size: 12.5px;
 }
 
-.search-field {
-  width: 200px;
-  max-width: 100%;
-  flex-shrink: 1;
-}
-
-@media (max-width: 540px) {
-  .search-field {
-    width: 100%;
-  }
+.filter-input :deep(.v-field__input) {
+  min-height: 36px;
 }
 
 .view-link {

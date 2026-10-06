@@ -219,7 +219,7 @@ const fmtFull = (iso) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyl
           prepend-inner-icon="mdi-magnify"
           hide-details
           class="filter-input"
-          style="width: 240px"
+          style="width: 340px"
         />
         <v-select
           v-model="filters.role"
@@ -447,7 +447,18 @@ const fmtFull = (iso) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyl
 <style scoped src="./StaffadminsCss.css">
 </style>
 
-<style>
+<style scoped>
+.filter-input :deep(.v-field__input),
+.filter-input :deep(input),
+.filter-input :deep(.v-select__selection-text),
+.filter-input :deep(.v-field__prepend-inner .v-icon) {
+  font-size: 12.5px;
+}
+
+.filter-input :deep(.v-field__input) {
+  min-height: 36px;
+}
+
 .filter-select-menu .v-list-item-title {
   font-size: 12.5px;
 }
