@@ -13,23 +13,6 @@
   border-bottom: 1px solid #f7f5f0;
 }
 
-.filter-input :deep(.v-field__input),
-.filter-input :deep(input) {
-  font-size: 12.5px;
-}
-
-.search-field {
-  width: 200px;
-  max-width: 100%;
-  flex-shrink: 1;
-}
-
-@media (max-width: 540px) {
-  .search-field {
-    width: 100%;
-  }
-}
-
 .view-link {
   font-size: 12px;
   color: #0f1e3d;

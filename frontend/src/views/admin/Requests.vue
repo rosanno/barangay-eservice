@@ -21,7 +21,7 @@
           prepend-inner-icon="mdi-magnify"
           hide-details
           class="filter-input"
-          style="width: 240px"
+          style="width: 340px"
           @update:model-value="onSearchInput"
         />
         <v-select

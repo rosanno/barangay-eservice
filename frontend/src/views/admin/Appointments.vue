@@ -21,7 +21,7 @@
           prepend-inner-icon="mdi-magnify"
           hide-details
           class="filter-input"
-          style="width: 200px"
+          style="width: 340px"
         />
         <v-text-field
           v-model="filters.date"

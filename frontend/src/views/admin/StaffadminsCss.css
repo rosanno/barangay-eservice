@@ -30,16 +30,6 @@ tbody.dim {
   opacity: 0.55;
 }
 
-.filter-input :deep(.v-field__input),
-.filter-input :deep(input),
-.filter-input :deep(.v-select__selection-text) {
-  font-size: 12.5px;
-}
-
-.filter-input :deep(.v-field__input) {
-  min-height: 36px;
-}
-
 .you-badge {
   font-size: 10px;
   color: #999;
