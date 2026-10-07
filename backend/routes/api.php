@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
+use App\Http\Controllers\Api\Admin\BarangaySettingController;
 use App\Http\Controllers\Api\Admin\DocumentRequestAdminController;
+use App\Http\Controllers\Api\Admin\DocumentTypeAdminController;
 use App\Http\Controllers\Api\Admin\ReportsAdminController;
 use App\Http\Controllers\Api\Admin\ResidentAdminController;
 use App\Http\Controllers\Api\Admin\ResidentLookupController;
@@ -90,5 +92,14 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::get('reports', [ReportsAdminController::class, 'index']);
+
+        Route::get('settings', [BarangaySettingController::class, 'show']);
+        Route::put('settings', [BarangaySettingController::class, 'update']);
+
+        Route::prefix('document-types')->group(function () {
+            Route::get('/', [DocumentTypeAdminController::class, 'index']);
+            Route::post('/', [DocumentTypeAdminController::class, 'store']);
+            Route::patch('/{documentType}', [DocumentTypeAdminController::class, 'update']);
+        });
     });
 });

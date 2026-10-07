@@ -19,6 +19,7 @@ export const adminRoutes = [
       { path: 'reports', name: 'admin-reports', component: () => import('@/views/admin/Reports.vue') },
       // { path: 'ai-assistant', name: 'admin-ai-assistant', component: () => import('@/views/admin/AiAssistant.vue') },
       { path: 'users', name: 'admin-staffadmins', component: () => import('@/views/admin/Staffadmins.vue') },
+      { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/Settings.vue') },
     ],
   },
 ]
