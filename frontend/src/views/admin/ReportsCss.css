@@ -58,7 +58,8 @@
   border-radius: 10px;
   box-shadow: none;
   padding: 20px 22px;
-  margin-bottom: 20px;
+  height: 100%; /* fill the v-col so both cards in a row match */
+  box-sizing: border-box;
 }
 
 .chart-title {

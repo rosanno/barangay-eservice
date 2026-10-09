@@ -35,7 +35,7 @@ export const residentRoutes = [
         meta: { title: 'Appointments', subtitle: 'Book and manage your appointments' },
       },
       // Add as you build them out:
-      // { path: 'documents', name: 'documents', component: () => import('@/views/resident/MyRequests.vue'), meta: { title: 'My requests' } },
+      { path: 'documents', name: 'documents', component: () => import('@/views/resident/MyRequests.vue'), meta: { title: 'My requests', subtitle: 'Track your document requests' } },
       // { path: 'documents/track', name: 'documents-track', component: () => import('@/views/resident/TrackRequest.vue'), meta: { title: 'Track a request' } },
       // { path: 'profile', name: 'profile', component: () => import('@/views/resident/Profile.vue'), meta: { title: 'Profile' } },
       // { path: 'settings', name: 'settings', component: () => import('@/views/resident/Settings.vue'), meta: { title: 'Settings' } },
