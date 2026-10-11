@@ -153,7 +153,7 @@ onMounted(load)
               v-for="r in filtered"
               :key="r.id"
               class="table-row table-row--clickable"
-              @click="router.push(`/resident/requests/${r.id}`)"
+              @click="router.push(`/my-requests/${r.id}`)"
             >
               <td style="font-size: 12px; font-weight: 600; color: #0f1e3d; padding: 12px 8px; white-space: nowrap">
                 {{ r.reference_no }}

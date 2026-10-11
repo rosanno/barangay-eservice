@@ -6,15 +6,56 @@ import { getMyRequest, cancelRequest } from '@/api/residentRequest'
 
 const route = useRoute()
 const router = useRouter()
-const request = ref(null)
+const raw = ref(null)
 const loading = ref(true)
 const error = ref('')
 const confirmOpen = ref(false)
 const cancelling = ref(false)
 
-const typeTitle = computed(
-  () => DOCUMENT_TYPES.find((t) => t.value === request.value?.document_type)?.title ?? request.value?.document_type
-)
+/**
+ * Normalize the API response so the template always sees the same fields,
+ * whether document_type is a string code or a nested object, and whatever
+ * the backend calls copies / dates / status casing.
+ */
+const request = computed(() => {
+  const r = raw.value
+  if (!r) return null
+
+  const dt = r.document_type
+  const docObj =
+    dt && typeof dt === 'object' ? dt : (r.document ?? r.documentType ?? null)
+  const code = dt && typeof dt === 'object' ? dt.code : dt
+
+  return {
+    ...r,
+    id: r.id,
+    reference_no: r.reference_no ?? r.referenceNo ?? r.reference ?? r.tracking_no ?? '',
+    status: String(r.status ?? '').toLowerCase(),
+    copies: r.copies ?? r.quantity ?? r.number_of_copies ?? r.numberOfCopies ?? null,
+    created_at: r.created_at ?? r.requested_at ?? r.createdAt ?? null,
+    pickup_date:
+      r.pickup_date ?? r.preferred_pickup_date ?? r.preferred_pickup ?? r.pickupDate ?? null,
+    fee: r.fee ?? docObj?.fee ?? null,
+    rejection_reason: r.rejection_reason ?? r.rejectionReason ?? '',
+    history: r.history ?? r.status_history ?? r.statusHistory ?? [],
+    _code: code,
+    _doc: docObj,
+  }
+})
+
+const docType = computed(() => request.value?._doc ?? null)
+
+const typeTitle = computed(() => {
+  const r = request.value
+  if (!r) return ''
+  return (
+    r._doc?.name ??
+    DOCUMENT_TYPES.find((t) => t.value === r._code)?.title ??
+    r._code ??
+    'Document request'
+  )
+})
+
 const stepIndex = computed(() => STATUS_STEPS.indexOf(request.value?.status))
 const isClosed = computed(() => ['rejected', 'cancelled'].includes(request.value?.status))
 
@@ -22,7 +63,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    request.value = await getMyRequest(route.params.id)
+    raw.value = await getMyRequest(route.params.id)
   } catch (e) {
     error.value =
       e.response?.status === 404
@@ -52,7 +93,7 @@ onMounted(load)
 
 <template>
   <div class="page">
-    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="back" @click="router.push('/resident/requests')">
+    <v-btn variant="text" prepend-icon="mdi-arrow-left" class="back" @click="router.push('/my-requests')">
       My requests
     </v-btn>
 
@@ -65,9 +106,6 @@ onMounted(load)
           <h1>{{ typeTitle }}</h1>
           <p class="ref">{{ request.reference_no }}</p>
         </div>
-        <span class="pill" :style="{ color: STATUS[request.status]?.color, background: STATUS[request.status]?.bg }">
-          {{ STATUS[request.status]?.label }}
-        </span>
       </header>
 
       <section class="card" aria-label="Progress">
@@ -99,8 +137,8 @@ onMounted(load)
       <section class="card" aria-label="Request details">
         <h2>Details</h2>
         <dl class="grid">
-          <div><dt>Purpose</dt><dd>{{ request.purpose }}</dd></div>
-          <div><dt>Copies</dt><dd>{{ request.copies }}</dd></div>
+          <div><dt>Purpose</dt><dd>{{ request.purpose || '—' }}</dd></div>
+          <div><dt>Copies</dt><dd>{{ request.copies ?? '—' }}</dd></div>
           <div><dt>Requested on</dt><dd>{{ formatDate(request.created_at) }}</dd></div>
           <div><dt>Preferred pickup</dt><dd>{{ formatDate(request.pickup_date) }}</dd></div>
           <div v-if="request.fee != null">
@@ -110,11 +148,30 @@ onMounted(load)
         </dl>
       </section>
 
+      <section v-if="docType" class="card" aria-label="About this document">
+        <h2>About this document</h2>
+        <p v-if="docType.description" class="doc-desc">{{ docType.description }}</p>
+        <dl class="grid">
+          <div v-if="docType.processing_days != null">
+            <dt>Processing time</dt>
+            <dd>{{ docType.processing_days }} {{ docType.processing_days === 1 ? 'day' : 'days' }}</dd>
+          </div>
+          <div v-if="docType.requirements?.length" class="wide">
+            <dt>Bring when collecting</dt>
+            <dd>
+              <ul class="reqs">
+                <li v-for="r in docType.requirements" :key="r">{{ r }}</li>
+              </ul>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <section v-if="request.history?.length" class="card" aria-label="History">
         <h2>History</h2>
         <ul class="history">
-          <li v-for="h in request.history" :key="h.id">
-            <strong>{{ STATUS[h.status]?.label ?? h.status }}</strong>
+          <li v-for="h in request.history" :key="h.id ?? h.created_at">
+            <strong>{{ STATUS[String(h.status).toLowerCase()]?.label ?? h.status }}</strong>
             <span>{{ formatDate(h.created_at) }}</span>
             <p v-if="h.note">{{ h.note }}</p>
           </li>
@@ -164,6 +221,8 @@ h2 { font-size: 1rem; font-weight: 700; color: #0B1F44; margin-bottom: 14px; }
 .grid .wide { grid-column: 1 / -1; }
 dt { font-size: .8rem; color: #6B7280; }
 dd { font-weight: 600; color: #1F2937; margin-top: 2px; }
+.doc-desc { color: #4B5563; font-size: .92rem; margin-bottom: 14px; }
+.reqs { margin: 4px 0 0; padding-left: 18px; font-weight: 500; }
 .history { list-style: none; padding: 0; margin: 0; border-left: 2px solid #E5E7EB; }
 .history li { padding: 0 0 14px 16px; position: relative; display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .history li::before { content: ''; position: absolute; left: -6px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: #C9A227; }
