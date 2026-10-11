@@ -125,7 +125,7 @@ async function signOut() {
           <v-icon icon="mdi-file-plus-outline" size="18" />
           <span>Request a document</span>
         </router-link>
-        <router-link to="/documents" class="sidebar__link" active-class="sidebar__link--active">
+        <router-link to="/my-requests" class="sidebar__link" active-class="sidebar__link--active">
           <v-icon icon="mdi-file-document-outline" size="18" />
           <span>My requests</span>
           <span v-if="pendingCount" class="sidebar__badge">{{ pendingCount }}</span>
