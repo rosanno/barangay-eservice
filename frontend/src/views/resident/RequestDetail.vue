@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { STATUS, STATUS_STEPS, DOCUMENT_TYPES, formatDate } from '@/utils/requestStatus'
+import { STATUS, DOCUMENT_TYPES, formatDate } from '@/utils/requestStatus'
 import { getMyRequest, cancelRequest } from '@/api/residentRequest'
 
 const route = useRoute()
@@ -56,8 +56,78 @@ const typeTitle = computed(() => {
   )
 })
 
-const stepIndex = computed(() => STATUS_STEPS.indexOf(request.value?.status))
-const isClosed = computed(() => ['rejected', 'cancelled'].includes(request.value?.status))
+// ── Status chip: same colors and labels as the admin Requests page ──────
+// The API sends "ready_for_pickup"; some of your own utils use "ready".
+// Treat them as the same thing so neither spelling breaks the page.
+const canonicalStatus = computed(() => {
+  const s = request.value?.status
+  return s === 'ready_for_pickup' ? 'ready' : s
+})
+
+const CHIP = {
+  pending: { label: 'Pending', color: '#a05e00', bg: '#fff3e0' },
+  processing: { label: 'Processing', color: '#1a5fd8', bg: '#e8f0fe' },
+  ready: { label: 'Ready', color: '#a07020', bg: '#fff9ed', border: '#f5a62350' },
+  released: { label: 'Released', color: '#1b6e34', bg: '#e8f5e9' },
+  rejected: { label: 'Rejected', color: '#c0392b', bg: '#fdecea' },
+  cancelled: { label: 'Cancelled', color: '#c0392b', bg: '#fdecea' },
+}
+
+const chip = computed(
+  () =>
+    CHIP[canonicalStatus.value] ?? {
+      label: request.value?.status ?? '',
+      color: '#a05e00',
+      bg: '#fff3e0',
+    }
+)
+
+const chipStyle = computed(() => ({
+  color: chip.value.color,
+  background: chip.value.bg,
+  border: chip.value.border ? `1px solid ${chip.value.border}` : 'none',
+}))
+
+const isReady = computed(() => canonicalStatus.value === 'ready')
+
+// ── Progress: same vertical timeline as the admin view dialog ───────────
+// green dot = done, gold dot = current step, gray dot = not reached yet.
+const timelineSteps = computed(() => {
+  const r = request.value
+  if (!r) return []
+  const t = r.timeline ?? {}
+  const status = canonicalStatus.value
+  const requestedAt = t.requested_at ?? r.created_at
+
+  if (status === 'rejected') {
+    return [
+      { key: 'requested', label: 'Requested', at: requestedAt },
+      { key: 'rejected', label: 'Rejected', at: t.updated_at ?? null, isCurrent: true },
+    ]
+  }
+  if (status === 'cancelled') {
+    return [
+      { key: 'requested', label: 'Requested', at: requestedAt },
+      { key: 'cancelled', label: 'Cancelled', at: t.cancelled_at ?? null, isCurrent: true },
+    ]
+  }
+
+  return [
+    { key: 'requested', label: 'Requested', at: requestedAt },
+    { key: 'processing', label: 'Processing', at: t.processed_at ?? null, isCurrent: status === 'processing' },
+    { key: 'ready', label: 'Ready for Pickup', at: t.ready_at ?? null, isCurrent: status === 'ready' },
+    { key: 'released', label: 'Released', at: t.released_at ?? null, isCurrent: status === 'released' },
+  ]
+})
+
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 async function load() {
   loading.value = true
@@ -106,30 +176,36 @@ onMounted(load)
           <h1>{{ typeTitle }}</h1>
           <p class="ref">{{ request.reference_no }}</p>
         </div>
+        <span class="status-chip" :style="chipStyle">{{ chip.label }}</span>
       </header>
 
       <section class="card" aria-label="Progress">
         <h2>Progress</h2>
-        <v-alert v-if="isClosed" :type="request.status === 'rejected' ? 'error' : 'info'" variant="tonal">
-          <template v-if="request.status === 'rejected'">
+
+        <div v-if="request.status === 'rejected'" class="rejection-note">
+          <v-icon icon="mdi-alert-circle-outline" size="15" />
+          <span>
             Your request was rejected.
-            <span v-if="request.rejection_reason">Reason: {{ request.rejection_reason }}</span>
+            <template v-if="request.rejection_reason">Reason: {{ request.rejection_reason }}.</template>
             You can submit a new request.
-          </template>
-          <template v-else>You cancelled this request.</template>
-        </v-alert>
-        <ol v-else class="steps">
+          </span>
+        </div>
+
+        <ul class="timeline">
           <li
-            v-for="(s, i) in STATUS_STEPS"
-            :key="s"
-            :class="{ done: i < stepIndex, current: i === stepIndex }"
-            :aria-current="i === stepIndex ? 'step' : undefined"
+            v-for="step in timelineSteps"
+            :key="step.key"
+            class="timeline__item"
+            :class="{ 'timeline__item--done': step.at, 'timeline__item--current': step.isCurrent }"
+            :aria-current="step.isCurrent ? 'step' : undefined"
           >
-            <span class="dot"><v-icon v-if="i < stepIndex" size="14" color="white">mdi-check</v-icon></span>
-            <span class="step-label">{{ STATUS[s].label }}</span>
+            <span class="timeline__dot" />
+            <span class="timeline__label">{{ step.label }}</span>
+            <span class="timeline__date">{{ step.at ? formatDateTime(step.at) : '—' }}</span>
           </li>
-        </ol>
-        <p v-if="request.status === 'ready'" class="ready-note">
+        </ul>
+
+        <p v-if="isReady" class="ready-note">
           Your document is ready. Bring a valid ID to the barangay hall to collect it.
         </p>
       </section>
@@ -204,18 +280,28 @@ onMounted(load)
 h1 { font-size: 1.6rem; font-weight: 700; color: #0B1F44; }
 h2 { font-size: 1rem; font-weight: 700; color: #0B1F44; margin-bottom: 14px; }
 .ref { color: #6B7280; font-weight: 600; margin-top: 2px; }
-.pill { padding: 4px 12px; border-radius: 999px; font-size: .82rem; font-weight: 600; white-space: nowrap; }
 .card { background: #fff; border: 1px solid #E5E7EB; border-radius: 14px; padding: 22px; margin-bottom: 16px; }
-.steps { list-style: none; display: flex; padding: 0; margin: 4px 0 0; }
-.steps li { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
-.steps li::before { content: ''; position: absolute; top: 11px; left: -50%; width: 100%; height: 2px; background: #E5E7EB; }
-.steps li:first-child::before { display: none; }
-.steps li.done::before, .steps li.current::before { background: #C9A227; }
-.dot { position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 2px solid #D1D5DB; display: grid; place-items: center; }
-.done .dot { background: #0B1F44; border-color: #0B1F44; }
-.current .dot { border-color: #C9A227; background: #C9A227; box-shadow: 0 0 0 4px #FBF1CC; }
-.step-label { font-size: .82rem; color: #6B7280; }
-.current .step-label, .done .step-label { color: #0B1F44; font-weight: 600; }
+
+/* Status chip: same shape and colors as the admin pages */
+.status-chip { font-size: 10px; font-weight: 600; border-radius: 20px; padding: 2px 10px; display: inline-block; white-space: nowrap; margin-top: 6px; }
+
+/* Rejection note: same tint as the admin view dialog */
+.rejection-note { display: flex; align-items: flex-start; gap: 8px; background: #fdecea; color: #c0392b; font-size: 12px; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; }
+
+/* Progress timeline: same as the admin view dialog */
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline__item { display: flex; align-items: center; gap: 10px; padding: 8px 0; position: relative; }
+.timeline__item::before { content: ''; position: absolute; left: 3px; top: -2px; bottom: -2px; width: 1px; background: #e8e3d8; }
+.timeline__item:first-child::before { top: 50%; }
+.timeline__item:last-child::before { bottom: 50%; }
+.timeline__dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; z-index: 1; }
+.timeline__item--done .timeline__dot { background: #27ae60; }
+.timeline__item--current .timeline__dot { background: #f5a623; }
+.timeline__label { font-size: 12.5px; color: #666; flex: 1; }
+.timeline__item--done .timeline__label,
+.timeline__item--current .timeline__label { color: #1a1a1a; font-weight: 500; }
+.timeline__date { font-size: 11px; color: #999; }
+
 .ready-note { margin-top: 18px; padding: 12px 14px; background: #ECFDF5; color: #065F46; border-radius: 10px; font-size: .9rem; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
 .grid .wide { grid-column: 1 / -1; }
@@ -229,5 +315,5 @@ dd { font-weight: 600; color: #1F2937; margin-top: 2px; }
 .history span { color: #6B7280; font-size: .85rem; }
 .history p { flex-basis: 100%; font-size: .9rem; color: #374151; }
 .danger-row { display: flex; justify-content: flex-end; }
-@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .steps li::before { left: -50%; } }
+@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
 </style>
