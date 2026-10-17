@@ -37,7 +37,7 @@ export const residentRoutes = [
       // Add as you build them out:
       { path: 'my-requests', name: 'my-requests', component: () => import('@/views/resident/MyRequests.vue'), meta: { title: 'My requests', subtitle: 'Track your document requests' } },
       { path: 'my-requests/:id', name: 'document-request-detail', component: () => import('@/views/resident/RequestDetail.vue'), meta: { title: 'Request details', subtitle: 'Track your document requests' } },
-      // { path: 'documents/track', name: 'documents-track', component: () => import('@/views/resident/TrackRequest.vue'), meta: { title: 'Track a request' } },
+      { path: 'documents/track', name: 'documents-track', component: () => import('@/views/resident/TrackRequest.vue'), meta: { title: 'Track a request' } },
       // { path: 'profile', name: 'profile', component: () => import('@/views/resident/Profile.vue'), meta: { title: 'Profile' } },
       // { path: 'settings', name: 'settings', component: () => import('@/views/resident/Settings.vue'), meta: { title: 'Settings' } },
     ],

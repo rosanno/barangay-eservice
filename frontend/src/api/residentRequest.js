@@ -19,3 +19,9 @@ export const cancelRequest = async (id) => {
   const res = await api.post(`/document-requests/${id}/cancel`)
   return res.data.data
 }
+
+export function trackRequest(trackingNumber) {
+  return api
+    .get(`/document-requests/track/${encodeURIComponent(trackingNumber)}`)
+    .then((res) => res.data.data)
+}
