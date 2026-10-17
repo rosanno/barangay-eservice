@@ -117,14 +117,6 @@ async function signOut() {
         </router-link>
 
         <p class="sidebar__section-label">Services</p>
-        <router-link
-          to="/documents/request"
-          class="sidebar__link"
-          active-class="sidebar__link--active"
-        >
-          <v-icon icon="mdi-file-plus-outline" size="18" />
-          <span>Request a document</span>
-        </router-link>
         <router-link to="/my-requests" class="sidebar__link" active-class="sidebar__link--active">
           <v-icon icon="mdi-file-document-outline" size="18" />
           <span>My requests</span>
