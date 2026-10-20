@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
 use App\Http\Controllers\Api\DocumentTypeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\VerifyController;
 use Illuminate\Support\Facades\Route;
 
@@ -101,5 +102,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [DocumentTypeAdminController::class, 'store']);
             Route::patch('/{documentType}', [DocumentTypeAdminController::class, 'update']);
         });
+    });
+
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileController::class, 'show']);
+        Route::patch('/', [ProfileController::class, 'update']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
     });
 });
