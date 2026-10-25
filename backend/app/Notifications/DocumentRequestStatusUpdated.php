@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\DocumentRequest;
+use App\Models\UserSetting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -16,9 +17,19 @@ class DocumentRequestStatusUpdated extends Notification implements ShouldQueue
     {
     }
 
+    /**
+     * The in-app (bell) notification is always sent. Email only goes out
+     * if the resident hasn't turned it off in their settings.
+     */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        if (UserSetting::forUser($notifiable)->email_request_updates) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -29,7 +40,7 @@ class DocumentRequestStatusUpdated extends Notification implements ShouldQueue
             ->subject("Update on your document request {$request->tracking_number}")
             ->greeting("Hello {$notifiable->name},")
             ->line("Your request for \"{$request->documentType->name}\" is now: {$request->status->label()}.")
-            ->when($request->status->value === 'rejected', fn ($mail) => $mail->line("Reason: {$request->rejection_reason}"))
+            ->when($request->status->value === 'rejected', fn($mail) => $mail->line("Reason: {$request->rejection_reason}"))
             ->line("Tracking number: {$request->tracking_number}");
     }
 

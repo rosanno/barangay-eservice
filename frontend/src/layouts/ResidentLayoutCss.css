@@ -324,3 +324,28 @@
     display: none;
   }
 }
+
+.resident-shell {
+  min-height: 100vh;
+}
+
+/* Fixed sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100vh;
+  overflow-y: auto; /* sidebar scrolls on its own if nav is long */
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+/* Push content to the right of the sidebar */
+.resident-shell__body {
+  margin-left: 260px; /* must match the sidebar width */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

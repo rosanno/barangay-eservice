@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
 use App\Http\Controllers\Api\DocumentTypeController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\VerifyController;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 
+    // Profile and preferences — personal to whoever is logged in, so they
+    // live here in the shared group, never under /admin.
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileController::class, 'show']);
+        Route::patch('/', [ProfileController::class, 'update']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
+    });
+
+    Route::prefix('preferences')->group(function () {
+        Route::get('/', [PreferenceController::class, 'show']);
+        Route::patch('/', [PreferenceController::class, 'update']);
+        Route::post('/sign-out-others', [PreferenceController::class, 'signOutOthers']);
+    });
+
     /*
     |----------------------------------------------------------------------
     | Admin-only routes
@@ -102,11 +117,5 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [DocumentTypeAdminController::class, 'store']);
             Route::patch('/{documentType}', [DocumentTypeAdminController::class, 'update']);
         });
-    });
-
-    Route::prefix('profile')->group(function () {
-        Route::get('/', [ProfileController::class, 'show']);
-        Route::patch('/', [ProfileController::class, 'update']);
-        Route::put('/password', [ProfileController::class, 'updatePassword']);
     });
 });
