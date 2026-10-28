@@ -1,0 +1,12 @@
+{
+  "nav": { "requests": "Mga Kahilingan sa Dokumento", "appointments": "Mga Appointment", "tracking": "Subaybayan ang Kahilingan" },
+  "docs": {
+    "clearance": "Barangay Clearance",
+    "indigency": "Sertipiko ng Indigency",
+    "residency": "Sertipiko ng Paninirahan",
+    "businessPermit": "Permiso sa Negosyo"
+  },
+  "status": { "pending": "Naghihintay", "processing": "Pinoproseso", "ready": "Handa nang Kunin", "released": "Naibigay na", "rejected": "Tinanggihan" },
+  "request": { "new": "Bagong Kahilingan", "purpose": "Layunin", "submit": "Isumite ang Kahilingan", "success": "Naisumite na ang iyong kahilingan." },
+  "assistant": { "title": "Magtanong sa Barangay Assistant", "placeholder": "Magtanong tungkol sa mga requirement, bayad, oras ng pagproseso…", "send": "Ipadala" }
+}

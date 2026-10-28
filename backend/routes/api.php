@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\ReportsAdminController;
 use App\Http\Controllers\Api\Admin\ResidentAdminController;
 use App\Http\Controllers\Api\Admin\ResidentLookupController;
 use App\Http\Controllers\Api\AdminUserController;
+use App\Http\Controllers\Api\AiController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
@@ -35,6 +36,15 @@ Route::get('/verify/{trackingNumber}', [VerifyController::class, 'show']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+
+    // Language preference — personal to the logged-in user
+    Route::patch('/me/locale', function (Request $request) {
+        $request->validate(['locale' => 'required|in:en,fil']);
+        $request->user()->update(['locale' => $request->locale]);
+        return response()->noContent();
+    });
+
+    Route::post('/ai/chat', [AiController::class, 'chat'])->middleware('throttle:20,1');
 
     // Reference data
     Route::get('/document-types', [DocumentTypeController::class, 'index']);
@@ -82,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |----------------------------------------------------------------------
     */
     Route::middleware('admin')->prefix('admin')->group(function () {
+        Route::post('/ai/translate', [AiController::class, 'translate'])->middleware('throttle:30,1');
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::get('/users/{user}', [AdminUserController::class, 'show']);
