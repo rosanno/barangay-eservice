@@ -1,0 +1,12 @@
+{
+  "nav": { "requests": "Document Requests", "appointments": "Appointments", "tracking": "Track Request" },
+  "docs": {
+    "clearance": "Barangay Clearance",
+    "indigency": "Certificate of Indigency",
+    "residency": "Certificate of Residency",
+    "businessPermit": "Business Permit"
+  },
+  "status": { "pending": "Pending", "processing": "Processing", "ready": "Ready for Pickup", "released": "Released", "rejected": "Rejected" },
+  "request": { "new": "New Request", "purpose": "Purpose", "submit": "Submit Request", "success": "Your request was submitted." },
+  "assistant": { "title": "Ask the Barangay Assistant", "placeholder": "Ask about requirements, fees, processing time…", "send": "Send" }
+}

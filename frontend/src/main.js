@@ -14,6 +14,7 @@ import { documentRoutes } from './router/document-routes.js'
 import { residentRoutes } from './router/resident-routes.js'
 import { publicRoutes } from './router/public-routes.js'
 import { useAuthStore } from '@/store/auth'   // ← add this
+import { i18n } from './i18n/index.js'
 
 const routes = [
   ...authRoutes,
@@ -50,6 +51,7 @@ const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
+app.use(i18n)
 app.use(vuetify)
 
 app.mount('#app')

@@ -43,6 +43,7 @@ class User extends Authenticatable
         'contact_number',
         'address',
         'created_by',
+        'locale',
     ];
 
     protected $hidden = [

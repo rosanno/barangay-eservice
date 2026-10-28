@@ -10,6 +10,10 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  // send the selected language so Laravel can respond in it
+  config.headers['Accept-Language'] = localStorage.getItem('locale') || 'en'
+
   return config
 })
 
