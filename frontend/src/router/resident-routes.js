@@ -34,12 +34,6 @@ export const residentRoutes = [
         component: () => import('@/views/resident/BookAppointment.vue'),
         meta: { title: 'Appointments', subtitle: 'Book and manage your appointments' },
       },
-      {
-        path: 'assistant',
-        name: 'assistant',
-        component: () => import('@/views/AssistantView.vue'),
-        meta: { requiresAuth: true }, // match whatever guard your other resident routes use
-      },
       // Add as you build them out:
       { path: 'my-requests', name: 'my-requests', component: () => import('@/views/resident/MyRequests.vue'), meta: { title: 'My requests', subtitle: 'Track your document requests' } },
       { path: 'my-requests/:id', name: 'document-request-detail', component: () => import('@/views/resident/RequestDetail.vue'), meta: { title: 'Request details', subtitle: 'Track your document requests' } },

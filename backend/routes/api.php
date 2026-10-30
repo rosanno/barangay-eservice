@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\BarangaySettingController;
 use App\Http\Controllers\Api\Admin\DocumentRequestAdminController;
@@ -39,8 +40,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Language preference — personal to the logged-in user
     Route::patch('/me/locale', function (Request $request) {
-        $request->validate(['locale' => 'required|in:en,fil']);
-        $request->user()->update(['locale' => $request->locale]);
+        $data = $request->validate([
+            'locale' => 'required|in:en,fil',
+        ]);
+
+        $request->user()->update(['locale' => $data['locale']]);
+
         return response()->noContent();
     });
 
