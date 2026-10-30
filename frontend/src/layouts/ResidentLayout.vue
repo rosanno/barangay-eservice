@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import { fetchMyDocumentRequests } from '@/api/documentRequests'
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@/api/notifications'
+import AssistantChat from '../components/AssistantChat.vue'
+import LanguageSwitcher from '../components/LanguageSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -160,6 +162,7 @@ async function signOut() {
         </div>
 
         <div class="topbar__actions">
+          <LanguageSwitcher />
           <router-link to="/documents/request" class="topbar__new-request">
             <v-icon icon="mdi-plus" size="16" />
             New request
@@ -240,6 +243,8 @@ async function signOut() {
         <router-view />
       </main>
     </div>
+
+     <AssistantChat />
   </div>
 </template>
 
