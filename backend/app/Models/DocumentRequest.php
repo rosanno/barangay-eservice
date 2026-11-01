@@ -30,6 +30,15 @@ class DocumentRequest extends Model
         'ready_at',
         'released_at',
         'cancelled_at',
+        'ip_address',
+        'fingerprint',
+        'flag_type',
+        'flag_score',
+        'flag_reasons',
+        'duplicate_of_id',
+        'flagged_at',
+        'flag_reviewed_at',
+        'flag_reviewed_by',
     ];
 
     protected function casts(): array
@@ -43,6 +52,9 @@ class DocumentRequest extends Model
             'ready_at' => 'datetime',
             'released_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'flag_reasons' => 'array',
+            'flagged_at' => 'datetime',
+            'flag_reviewed_at' => 'datetime',
         ];
     }
 

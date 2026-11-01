@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Enums\DocumentRequestStatus;
+use App\Jobs\FlagDocumentRequest;
 use App\Models\DocumentRequest;
 use App\Models\DocumentType;
 use App\Models\User;
 use App\Notifications\DocumentRequestStatusUpdated;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class DocumentRequestService
@@ -17,14 +17,27 @@ class DocumentRequestService
     /**
      * @param  array{document_type_id:int, purpose:string, details?:array, attachments?:array}  $data
      */
-    public function create(User $user, array $data): DocumentRequest
+    public function create(User $user, array $data, ?string $ipAddress = null): DocumentRequest
     {
         $documentType = DocumentType::query()
             ->where('id', $data['document_type_id'])
             ->where('is_active', true)
             ->firstOrFail();
 
-        return DB::transaction(function () use ($user, $documentType, $data) {
+        // Block exact open duplicates up front
+        $hasOpen = DocumentRequest::query()
+            ->where('user_id', $user->id)
+            ->where('document_type_id', $documentType->id)
+            ->whereIn('status', RequestFlagger::OPEN_STATUSES)
+            ->exists();
+
+        if ($hasOpen) {
+            throw ValidationException::withMessages([
+                'document_type_id' => 'You already have an active request for this document.',
+            ]);
+        }
+
+        $documentRequest = DB::transaction(function () use ($user, $documentType, $data, $ipAddress) {
             $request = DocumentRequest::create([
                 'user_id' => $user->id,
                 'document_type_id' => $documentType->id,
@@ -32,7 +45,10 @@ class DocumentRequestService
                 'details' => $data['details'] ?? [],
                 'status' => DocumentRequestStatus::Pending,
                 'fee' => $documentType->fee,
+                'ip_address' => $ipAddress,
             ]);
+
+            $request->update(['fingerprint' => RequestFlagger::fingerprint($request)]);
 
             foreach ($data['attachments'] ?? [] as $attachment) {
                 /** @var UploadedFile $file */
@@ -50,6 +66,11 @@ class DocumentRequestService
 
             return $request->load(['documentType', 'attachments']);
         });
+
+        // After the transaction commits, so the job never sees an unsaved row
+        FlagDocumentRequest::dispatch($documentRequest);
+
+        return $documentRequest;
     }
 
     public function cancel(DocumentRequest $request, User $user): DocumentRequest
@@ -58,7 +79,7 @@ class DocumentRequestService
             throw ValidationException::withMessages(['request' => 'You may only cancel your own requests.']);
         }
 
-        if (! $request->status->canTransitionTo(DocumentRequestStatus::Cancelled)) {
+        if (!$request->status->canTransitionTo(DocumentRequestStatus::Cancelled)) {
             throw ValidationException::withMessages(['status' => 'This request can no longer be cancelled.']);
         }
 
@@ -77,7 +98,7 @@ class DocumentRequestService
     {
         $target = DocumentRequestStatus::from($data['status']);
 
-        if (! $request->status->canTransitionTo($target)) {
+        if (!$request->status->canTransitionTo($target)) {
             throw ValidationException::withMessages([
                 'status' => "Cannot move a request from \"{$request->status->label()}\" to \"{$target->label()}\".",
             ]);
@@ -99,7 +120,7 @@ class DocumentRequestService
                 ? ($data['rejection_reason'] ?? null)
                 : $request->rejection_reason,
             $timestampField => $timestampField ? now() : null,
-        ], fn ($value) => $value !== null));
+        ], fn($value) => $value !== null));
 
         $request->user->notify(new DocumentRequestStatusUpdated($request->fresh()));
 

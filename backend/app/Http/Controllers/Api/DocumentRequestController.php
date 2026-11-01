@@ -35,7 +35,11 @@ class DocumentRequestController extends Controller
 
     public function store(StoreDocumentRequestRequest $request): JsonResponse
     {
-        $documentRequest = $this->service->create($request->user(), $request->validated());
+        $documentRequest = $this->service->create(
+            $request->user(),
+            $request->validated(),
+            $request->ip(),
+        );
 
         ClearanceRequestSubmitted::dispatch($documentRequest);
 
