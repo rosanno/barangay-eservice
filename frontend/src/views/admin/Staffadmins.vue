@@ -370,17 +370,52 @@ const fmtFull = (iso) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyl
         <v-card-title style="font-size: 15px">{{ isEditing ? 'Edit account' : 'Add account' }}</v-card-title>
         <v-card-text>
           <v-form ref="formRef" @submit.prevent="save">
-            <v-text-field v-model="form.name" label="Full name" variant="outlined" :rules="[required('Full name')]" :error-messages="fieldErrors.name" />
-            <v-text-field v-model="form.email" label="Email" type="email" variant="outlined" :rules="[required('Email'), emailRule]" :error-messages="fieldErrors.email" />
-            <v-btn-toggle v-model="form.role" mandatory divided class="role-toggle mb-4">
-              <v-btn value="staff">Staff</v-btn>
-              <v-btn value="admin">Admin</v-btn>
+            <v-text-field
+              v-model="form.name"
+              label="Full name"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              class="dialog-field mb-3"
+              :rules="[required('Full name')]"
+              :error-messages="fieldErrors.name"
+            />
+            <v-text-field
+              v-model="form.email"
+              label="Email"
+              type="email"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              class="dialog-field mb-3"
+              :rules="[required('Email'), emailRule]"
+              :error-messages="fieldErrors.email"
+            />
+            <v-btn-toggle v-model="form.role" mandatory divided density="compact" class="role-toggle mb-3">
+              <v-btn value="staff" size="small">Staff</v-btn>
+              <v-btn value="admin" size="small">Admin</v-btn>
             </v-btn-toggle>
-            <p style="font-size: 12px; color: #999; margin: -4px 0 16px">
+            <p style="font-size: 12px; color: #999; margin: 0 0 12px">
               {{ form.role === 'admin' ? 'Admins can manage staff accounts and every setting in the portal.' : 'Staff can process requests and appointments but cannot manage accounts.' }}
             </p>
-            <v-text-field v-model="form.position" label="Position (e.g. Barangay Secretary)" variant="outlined" :error-messages="fieldErrors.position" />
-            <v-text-field v-model="form.contact_number" label="Contact number" variant="outlined" :error-messages="fieldErrors.contact_number" />
+            <v-text-field
+              v-model="form.position"
+              label="Position (e.g. Barangay Secretary)"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              class="dialog-field mb-3"
+              :error-messages="fieldErrors.position"
+            />
+            <v-text-field
+              v-model="form.contact_number"
+              label="Contact number"
+              variant="outlined"
+              density="compact"
+              hide-details="auto"
+              class="dialog-field"
+              :error-messages="fieldErrors.contact_number"
+            />
           </v-form>
           <p v-if="!isEditing" style="font-size: 12px; color: #999">
             A temporary password is generated after you save. They'll be asked to change it at first login.
@@ -445,24 +480,4 @@ const fmtFull = (iso) => (iso ? new Date(iso).toLocaleString('en-PH', { dateStyl
 <style scoped src="./DashboardCss.css"></style>
 
 <style scoped src="./StaffadminsCss.css">
-</style>
-
-<style scoped>
-.filter-input :deep(.v-field__input),
-.filter-input :deep(input),
-.filter-input :deep(.v-select__selection-text),
-.filter-input :deep(.v-field__prepend-inner .v-icon) {
-  font-size: 12.5px;
-}
-
-.filter-input :deep(.v-field__input) {
-  min-height: 36px;
-}
-
-.filter-select-menu .v-list-item-title {
-  font-size: 12.5px;
-}
-.filter-select-menu .v-list-item {
-  min-height: 34px;
-}
 </style>

@@ -37,7 +37,7 @@
               :items="sexOptions"
               item-title="label"
               item-value="value"
-              v-bind="fieldProps"
+              v-bind="selectProps"
             />
           </div>
           <div class="field-block">
@@ -68,7 +68,7 @@
           </div>
           <div class="field-block">
             <label class="field-label">Blood type</label>
-            <v-select v-model="form.blood_type" :items="bloodTypeOptions" v-bind="fieldProps" clearable />
+            <v-select v-model="form.blood_type" :items="bloodTypeOptions" v-bind="selectProps" clearable />
           </div>
         </div>
       </v-card>
@@ -231,7 +231,17 @@ import { createResident } from '@/api/adminResidents'
 
 const router = useRouter()
 
-const fieldProps = { density: 'compact', variant: 'outlined', hideDetails: true }
+const fieldProps = {
+  density: 'compact',
+  variant: 'outlined',
+  hideDetails: true,
+  class: 'filter-input',
+}
+
+const selectProps = {
+  ...fieldProps,
+  menuProps: { contentClass: 'filter-select-menu' },
+}
 
 const sexOptions = [
   { label: 'Male', value: 'male' },
