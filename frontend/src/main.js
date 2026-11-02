@@ -16,6 +16,8 @@ import { publicRoutes } from './router/public-routes.js'
 import { useAuthStore } from '@/store/auth'   // ← add this
 import { i18n } from './i18n/index.js'
 
+import './styles/global.css';
+
 const routes = [
   ...authRoutes,
   ...adminRoutes,

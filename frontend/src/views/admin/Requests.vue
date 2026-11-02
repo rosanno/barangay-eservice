@@ -409,11 +409,12 @@ onMounted(() => {
 
 <style scoped src="./RequestsCss.css"></style>
 
-<style>
-.filter-select-menu .v-list-item-title {
+<style scoped>
+/* ── Select menu (teleported, needs :deep) ── */
+.filter-select-menu :deep(.v-list-item-title) {
   font-size: 12.5px;
 }
-.filter-select-menu .v-list-item {
+.filter-select-menu :deep(.v-list-item) {
   min-height: 34px;
 }
 
@@ -450,7 +451,7 @@ onMounted(() => {
   color: #8a8f98;
   transition: background 0.15s, color 0.15s;
 }
-.action-btn .v-icon {
+.action-btn :deep(.v-icon) {
   font-size: 18px;
 }
 .action-btn:hover {

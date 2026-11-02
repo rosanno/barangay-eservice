@@ -1,5 +1,5 @@
 <template>
-  <div style="max-width: 720px">
+  <div style="max-width: 720px; margin: 0 auto">
     <!-- ─── Search ───────────────────────────────────────────────── -->
     <v-card variant="flat" style="background: #ffffff; border-radius: 10px; box-shadow: none">
       <v-card-text class="px-5 py-5">
