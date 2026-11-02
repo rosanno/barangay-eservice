@@ -406,18 +406,9 @@ onMounted(() => {
 </script>
 
 <style scoped src="./DashboardCss.css"></style>
-
 <style scoped src="./RequestsCss.css"></style>
 
 <style scoped>
-/* ── Select menu (teleported, needs :deep) ── */
-.filter-select-menu :deep(.v-list-item-title) {
-  font-size: 12.5px;
-}
-.filter-select-menu :deep(.v-list-item) {
-  min-height: 34px;
-}
-
 /* ── Row layout ── */
 .table-row td {
   vertical-align: middle;
