@@ -40,6 +40,7 @@ export const residentRoutes = [
       { path: 'documents/track', name: 'documents-track', component: () => import('@/views/resident/TrackRequest.vue'), meta: { title: 'Track a request' } },
       { path: 'profile', name: 'profile', component: () => import('@/views/resident/Profile.vue'), meta: { title: 'Profile', subtitle: 'View and update your profile' } },
       { path: 'settings', name: 'settings', component: () => import('@/views/resident/ResidentSettings.vue'), meta: { title: 'Settings', subtitle: 'Manage your preferences' } },
+      { path: 'my-household', component: () => import('@/views/resident/MyHousehold.vue'), meta: { roles: ['resident'], title: 'My Household', subtitle: 'Manage your household information' } },
     ],
   },
 ]

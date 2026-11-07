@@ -20,6 +20,7 @@ export const adminRoutes = [
       // { path: 'ai-assistant', name: 'admin-ai-assistant', component: () => import('@/views/admin/AiAssistant.vue') },
       { path: 'users', name: 'admin-staffadmins', component: () => import('@/views/admin/Staffadmins.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/Settings.vue') },
+      { path: '/admin/households', component: () => import('@/views/admin/Households.vue'), meta: { roles: ['admin', 'staff'] } },
     ],
   },
 ]

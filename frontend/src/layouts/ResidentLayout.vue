@@ -142,6 +142,10 @@ async function signOut() {
           <v-icon icon="mdi-account-outline" size="18" />
           <span>Profile</span>
         </router-link>
+        <router-link to="/household" class="sidebar__link" active-class="sidebar__link--active">
+          <v-icon icon="mdi-home-group" size="18" />
+          <span>My household</span>
+        </router-link>
         <router-link to="/settings" class="sidebar__link" active-class="sidebar__link--active">
           <v-icon icon="mdi-cog-outline" size="18" />
           <span>Settings</span>

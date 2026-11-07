@@ -363,6 +363,7 @@ const serviceNav = computed(() => [
 
 const adminNav = [
   { label: 'Residents', to: '/admin/residents', icon: 'mdi-account-group-outline' },
+  {label: 'Households', to: '/admin/housholds', icon: 'mdi-home-group'},
   { label: 'Reports', to: '/admin/reports', icon: 'mdi-chart-bar' },
   { label: 'Staff & admins', to: '/admin/users', icon: 'mdi-shield-account-outline' },
   { label: 'Settings', to: '/admin/settings', icon: 'mdi-cog-outline' },
@@ -375,6 +376,7 @@ const pageMeta = {
   '/admin/appointments': ['Appointments', 'Book and manage resident appointments'],
   '/admin/documents': ['Document Tracking', 'Track real-time document status'],
   '/admin/residents': ['Residents', 'Registered barangay residents'],
+  '/admin/households': ['Households', 'Manage households'],
   '/admin/residents/new': ['Register Resident', 'Add a new resident and create their account'],
   '/admin/reports': ['Reports', 'Analytics and statistics'],
   '/admin/users': ['Staff & Admins', 'Manage system users'],

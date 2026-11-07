@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\HouseholdAdminController;
+use App\Http\Controllers\HouseholdController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\BarangaySettingController;
@@ -91,6 +93,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sign-out-others', [PreferenceController::class, 'signOutOthers']);
     });
 
+    Route::prefix('household')->group(function () {
+        Route::get('/', [HouseholdController::class, 'show']);
+        Route::post('/', [HouseholdController::class, 'store']);
+        Route::put('/', [HouseholdController::class, 'update']);
+    });
+
     /*
     |----------------------------------------------------------------------
     | Admin-only routes
@@ -132,6 +140,15 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [DocumentTypeAdminController::class, 'index']);
             Route::post('/', [DocumentTypeAdminController::class, 'store']);
             Route::patch('/{documentType}', [DocumentTypeAdminController::class, 'update']);
+        });
+
+        Route::prefix('households')->group(function () {
+            Route::get('/stats', [HouseholdAdminController::class, 'stats']);
+            Route::get('/export', [HouseholdAdminController::class, 'export']);
+            Route::get('/', [HouseholdAdminController::class, 'index']);
+            Route::get('/{household}', [HouseholdAdminController::class, 'show'])->whereNumber('household');
+            Route::patch('/{household}/status', [HouseholdAdminController::class, 'updateStatus'])->whereNumber('household');
+            Route::delete('/{household}', [HouseholdAdminController::class, 'destroy'])->whereNumber('household');
         });
     });
 });
