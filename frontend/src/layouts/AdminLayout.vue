@@ -363,7 +363,7 @@ const serviceNav = computed(() => [
 
 const adminNav = [
   { label: 'Residents', to: '/admin/residents', icon: 'mdi-account-group-outline' },
-  {label: 'Households', to: '/admin/housholds', icon: 'mdi-home-group'},
+  {label: 'Households', to: '/admin/households', icon: 'mdi-home-group'},
   { label: 'Reports', to: '/admin/reports', icon: 'mdi-chart-bar' },
   { label: 'Staff & admins', to: '/admin/users', icon: 'mdi-shield-account-outline' },
   { label: 'Settings', to: '/admin/settings', icon: 'mdi-cog-outline' },
