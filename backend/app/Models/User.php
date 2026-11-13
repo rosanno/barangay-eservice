@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -82,5 +83,10 @@ class User extends Authenticatable
     public function resident()
     {
         return $this->hasOne(\App\Models\Resident::class);
+    }
+
+    public function household(): HasOne
+    {
+        return $this->hasOne(Household::class);
     }
 }
