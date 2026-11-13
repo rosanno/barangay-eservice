@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DemographicsReportController;
 use App\Http\Controllers\Api\Admin\HouseholdAdminController;
 use App\Http\Controllers\HouseholdController;
 use Illuminate\Http\Request;
@@ -150,5 +151,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/{household}/status', [HouseholdAdminController::class, 'updateStatus'])->whereNumber('household');
             Route::delete('/{household}', [HouseholdAdminController::class, 'destroy'])->whereNumber('household');
         });
+
+        Route::get('reports/demographics', DemographicsReportController::class);
     });
 });
