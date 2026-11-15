@@ -4,7 +4,8 @@
       v-model="tab"
       color="#0f1e3d"
       slider-color="#f5a623"
-      class="mb-4"
+      density="compact"
+      class="reports-tabs mb-4"
     >
       <v-tab value="overview" class="text-none" prepend-icon="mdi-chart-box-outline">Overview</v-tab>
       <v-tab value="demographics" class="text-none" prepend-icon="mdi-account-group-outline">Demographics</v-tab>
@@ -223,4 +224,17 @@ onMounted(load)
 </script>
 
 <style scoped src="./ReportsCss.css">
+</style>
+
+<style scoped>
+.reports-tabs :deep(.v-tab) {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.reports-tabs :deep(.v-tab .v-icon) {
+  font-size: 16px;
+}
 </style>
