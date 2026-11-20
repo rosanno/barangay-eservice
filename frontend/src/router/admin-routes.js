@@ -21,6 +21,8 @@ export const adminRoutes = [
       { path: 'users', name: 'admin-staffadmins', component: () => import('@/views/admin/Staffadmins.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/Settings.vue') },
       { path: '/admin/households', component: () => import('@/views/admin/Households.vue'), meta: { roles: ['admin', 'staff'] } },
+      { path: '/admin/households/new', name: 'admin-household-new', component: () => import('@/views/admin/HouseholdForm.vue') },
+      { path: '/admin/households/:id/edit', name: 'admin-household-edit', component: () => import('@/views/admin/HouseholdForm.vue') },
     ],
   },
 ]
