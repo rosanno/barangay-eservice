@@ -1,10 +1,13 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   getHouseholds, getHousehold, getHouseholdStats,
   updateHouseholdStatus, deleteHousehold, exportHouseholds,
 } from '@/api/household'
 import StatCard from '@/components/dashboard/StatCard.vue'
+
+const router = useRouter()
 
 // `cls` maps onto the same status-chip colors the other admin pages use.
 const STATUS = {
@@ -35,6 +38,10 @@ const filters = reactive({ search: '', status: '', purok: '', page: 1, per_page:
 const snackbar = reactive({ show: false, text: '', color: 'success' })
 
 const notify = (text, color = 'success') => Object.assign(snackbar, { show: true, text, color })
+
+// ── Navigation to the add / edit form ──
+const goAdd = () => router.push({ name: 'admin-household-new' })
+const goEdit = (row) => router.push({ name: 'admin-household-edit', params: { id: row.id } })
 
 async function load() {
   loading.value = true
@@ -178,6 +185,13 @@ onMounted(() => { load(); loadStats() })
           :menu-props="{ contentClass: 'filter-select-menu' }"
         />
         <v-btn
+          style="background: #f5a623; color: #0f1e3d; text-transform: none; font-weight: 600"
+          prepend-icon="mdi-plus"
+          @click="goAdd"
+        >
+          Add household
+        </v-btn>
+        <v-btn
           style="background: #0f1e3d; color: #fff; text-transform: none"
           prepend-icon="mdi-download"
           @click="doExport"
@@ -284,6 +298,8 @@ onMounted(() => { load(); loadStats() })
                       />
                     </template>
                     <v-list density="compact">
+                      <v-list-item prepend-icon="mdi-square-edit-outline" title="Edit survey" @click="goEdit(row)" />
+                      <v-divider />
                       <v-list-item v-if="row.status !== 'verified'" prepend-icon="mdi-check-circle-outline" title="Verify" @click="setStatus(row, 'verified')" />
                       <v-list-item prepend-icon="mdi-pencil-outline" title="Request update" @click="askRemarks(row, 'needs_update')" />
                       <v-list-item prepend-icon="mdi-close-circle-outline" title="Reject" @click="askRemarks(row, 'rejected')" />
@@ -340,7 +356,11 @@ onMounted(() => { load(); loadStats() })
               <div class="detail"><span class="detail__label">Electricity</span><span class="detail__value">{{ selected.has_electricity ? 'Yes' : 'No' }}</span></div>
               <div class="detail"><span class="detail__label">Income bracket</span><span class="detail__value">{{ label(selected.income_bracket) }}</span></div>
               <div class="detail"><span class="detail__label">4Ps</span><span class="detail__value">{{ selected.is_4ps ? 'Yes' : 'No' }}</span></div>
-              <div class="detail detail--wide3">
+              <div class="detail">
+                <span class="detail__label">Submitted by</span>
+                <span class="detail__value">{{ selected.submitted_by?.name ?? 'Encoded by staff' }}</span>
+              </div>
+              <div class="detail detail--wide2">
                 <span class="detail__label">Verified</span>
                 <span class="detail__value">{{ selected.verified_by ? `${fmtDate(selected.verified_at)} · ${selected.verified_by}` : '—' }}</span>
               </div>
@@ -378,6 +398,7 @@ onMounted(() => { load(); loadStats() })
           </v-card-text>
 
           <v-card-actions class="px-5 pb-5">
+            <v-btn variant="text" style="text-transform: none" prepend-icon="mdi-square-edit-outline" @click="goEdit(selected)">Edit</v-btn>
             <v-spacer />
             <v-btn variant="text" style="text-transform: none" @click="askRemarks(selected, 'needs_update')">Request update</v-btn>
             <v-btn variant="text" color="error" style="text-transform: none" @click="askRemarks(selected, 'rejected')">Reject</v-btn>

@@ -22,3 +22,9 @@ export const deleteHousehold = (id) => api.delete(`/admin/households/${id}`).the
 // Returns a Blob (the endpoint needs the Bearer token, so a plain <a href> won't work)
 export const exportHouseholds = () =>
   api.get('/admin/households/export', { responseType: 'blob' }).then((res) => res.data)
+
+export const createHousehold = (payload) =>
+  api.post('/admin/households', payload).then((res) => res.data.data)
+
+export const updateHousehold = (id, payload) =>
+  api.put(`/admin/households/${id}`, payload).then((res) => res.data.data)

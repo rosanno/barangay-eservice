@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\HouseholdRequest;
 use App\Http\Resources\HouseholdResource;
 use App\Models\Household;
 use App\Models\HouseholdMember;
@@ -14,6 +15,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HouseholdAdminController extends Controller
 {
+    private const HOUSEHOLD_FIELDS = [
+        'purok',
+        'street_address',
+        'housing_tenure',
+        'house_material',
+        'water_source',
+        'toilet_type',
+        'has_electricity',
+        'income_bracket',
+        'is_4ps',
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $paginator = Household::query()
@@ -43,6 +56,42 @@ class HouseholdAdminController extends Controller
                 'last_page' => $paginator->lastPage(),
             ]
         ]);
+    }
+
+    /** Staff-encoded survey: recorded as verified under the admin's name. */
+    public function store(HouseholdRequest $request): JsonResponse
+    {
+        $household = DB::transaction(function () use ($request) {
+            $household = Household::create([
+                ...$request->only(self::HOUSEHOLD_FIELDS),
+                'user_id' => null,
+                'status' => 'verified',
+                'verified_by' => $request->user()->id,
+                'verified_at' => now(),
+                'consent_at' => now(),
+            ]);
+            $household->members()->createMany($request->validated('members'));
+
+            return $household;
+        });
+
+        $household->load(['members', 'user', 'verifier'])->loadCount('members');
+
+        return response()->json(['data' => new HouseholdResource($household)], 201);
+    }
+
+    /** Admin edit: status and consent_at stay as they are; use updateStatus() to change those. */
+    public function update(HouseholdRequest $request, Household $household): JsonResponse
+    {
+        DB::transaction(function () use ($request, $household) {
+            $household->update($request->only(self::HOUSEHOLD_FIELDS));
+            $household->members()->delete();
+            $household->members()->createMany($request->validated('members'));
+        });
+
+        $household->load(['members', 'user', 'verifier'])->loadCount('members');
+
+        return response()->json(['data' => new HouseholdResource($household)]);
     }
 
     public function show(Household $household): JsonResponse
