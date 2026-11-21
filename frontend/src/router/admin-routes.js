@@ -36,6 +36,7 @@ export const adminRoutes = [
       { path: 'reports', redirect: '/admin/reports/requests' }, // keeps old links working
       { path: 'reports/requests', name: 'admin-reports', component: () => import('@/views/admin/Reports.vue') },
       { path: 'reports/demographics', name: 'admin-reports-demographics', component: () => import('@/views/admin/DemographicsPage.vue') },
+      { path: 'reports/appointments', name: 'admin-reports-appointments', component: () => import('@/views/admin/AppointmentReport.vue') },
 
       // Enable when built (path must match the nav: "assistant")
       // { path: 'assistant', name: 'admin-ai-assistant', component: () => import('@/views/admin/AiAssistant.vue') },
