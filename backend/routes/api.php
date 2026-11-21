@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AppointmentReportController;
 use App\Http\Controllers\Api\Admin\DemographicsReportController;
 use App\Http\Controllers\Api\Admin\HouseholdAdminController;
 use App\Http\Controllers\HouseholdController;
@@ -153,5 +154,11 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
         Route::get('reports/demographics', DemographicsReportController::class);
+
+        Route::prefix('reports/appointments')->group(function () {
+            Route::get('/summary', [AppointmentReportController::class, 'summary']);
+            Route::get('/export', [AppointmentReportController::class, 'export']);
+            Route::get('/', [AppointmentReportController::class, 'index']);
+        });
     });
 });
