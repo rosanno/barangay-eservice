@@ -106,7 +106,6 @@ const statusItems = [
   <div class="demographics">
     <div class="header">
       <div>
-        <h2>Population & Demographics</h2>
         <p class="sub">{{ report ? report.summary.population.toLocaleString() : 0 }} residents total</p>
       </div>
     </div>
