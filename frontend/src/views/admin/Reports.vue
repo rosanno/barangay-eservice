@@ -53,25 +53,8 @@
         <v-col cols="12" lg="7">
           <v-card variant="flat" class="chart-card">
             <p class="chart-title">Requests — last 14 days</p>
-            <svg
-              class="trend-chart"
-              :viewBox="`0 0 ${trendWidth} 90`"
-              preserveAspectRatio="none"
-            >
-              <rect
-                v-for="(day, i) in requestsOverTime"
-                :key="day.date"
-                :x="i * (barWidth + barGap)"
-                :y="70 - barHeight(day.count)"
-                :width="barWidth"
-                :height="barHeight(day.count) || 1"
-                rx="1.5"
-                fill="#0f1e3d"
-              />
-            </svg>
-            <div class="trend-labels">
-              <span>{{ requestsOverTime[0]?.label }}</span>
-              <span>{{ requestsOverTime[requestsOverTime.length - 1]?.label }}</span>
+            <div class="chart-box" style="height: 220px">
+              <Bar :data="trendData" :options="trendOptions" />
             </div>
           </v-card>
         </v-col>
@@ -80,15 +63,9 @@
         <v-col cols="12" lg="5">
           <v-card variant="flat" class="chart-card">
             <p class="chart-title">Requests by Status</p>
-            <div v-for="row in requestsByStatus" :key="row.status" class="bar-row">
-              <span class="bar-label">{{ row.label }}</span>
-              <div class="bar-track">
-                <div
-                  class="bar-fill"
-                  :style="{ width: barPercent(row.count, maxStatusCount) + '%', background: STATUS_COLOR[row.status] }"
-                />
-              </div>
-              <span class="bar-count">{{ row.count }}</span>
+            <p v-if="!requestsByStatus.length" class="empty-text">No requests yet.</p>
+            <div v-else class="chart-box" :style="{ height: hBarHeight(requestsByStatus.length) }">
+              <Bar :data="statusData" :options="hBarOptions" />
             </div>
           </v-card>
         </v-col>
@@ -100,15 +77,8 @@
           <v-card variant="flat" class="chart-card">
             <p class="chart-title">Requests by Document Type</p>
             <p v-if="!requestsByType.length" class="empty-text">No requests yet.</p>
-            <div v-for="row in requestsByType" :key="row.name" class="bar-row">
-              <span class="bar-label">{{ row.name }}</span>
-              <div class="bar-track">
-                <div
-                  class="bar-fill"
-                  :style="{ width: barPercent(row.count, maxTypeCount) + '%', background: '#f5a623' }"
-                />
-              </div>
-              <span class="bar-count">{{ row.count }}</span>
+            <div v-else class="chart-box" :style="{ height: hBarHeight(requestsByType.length) }">
+              <Bar :data="typeData" :options="hBarOptions" />
             </div>
           </v-card>
         </v-col>
@@ -118,15 +88,8 @@
           <v-card variant="flat" class="chart-card">
             <p class="chart-title">Residents by Purok</p>
             <p v-if="!residentsByPurok.length" class="empty-text">No residents registered yet.</p>
-            <div v-for="row in residentsByPurok" :key="row.purok" class="bar-row">
-              <span class="bar-label">{{ row.purok }}</span>
-              <div class="bar-track">
-                <div
-                  class="bar-fill"
-                  :style="{ width: barPercent(row.count, maxPurokCount) + '%', background: '#2e86de' }"
-                />
-              </div>
-              <span class="bar-count">{{ row.count }}</span>
+            <div v-else class="chart-box" :style="{ height: hBarHeight(residentsByPurok.length) }">
+              <Bar :data="purokData" :options="hBarOptions" />
             </div>
           </v-card>
         </v-col>
@@ -137,7 +100,17 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+} from 'chart.js'
 import { fetchAdminReports } from '@/api/adminReports'
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
 const loading = ref(true)
 const summary = ref({
@@ -164,22 +137,89 @@ const STATUS_COLOR = {
 
 const monthDelta = computed(() => summary.value.requests_this_month - summary.value.requests_last_month)
 
-const maxStatusCount = computed(() => Math.max(1, ...requestsByStatus.value.map((r) => r.count)))
-const maxTypeCount = computed(() => Math.max(1, ...requestsByType.value.map((r) => r.count)))
-const maxPurokCount = computed(() => Math.max(1, ...residentsByPurok.value.map((r) => r.count)))
+// ── Chart data ────────────────────────────────────────────────────────
+const trendData = computed(() => ({
+  labels: requestsOverTime.value.map((d) => d.label),
+  datasets: [
+    {
+      label: 'Requests',
+      data: requestsOverTime.value.map((d) => d.count),
+      backgroundColor: '#0f1e3d',
+      borderRadius: 3,
+      maxBarThickness: 22,
+    },
+  ],
+}))
 
-function barPercent(count, max) {
-  return Math.round((count / max) * 100)
+const statusData = computed(() => ({
+  labels: requestsByStatus.value.map((r) => r.label),
+  datasets: [
+    {
+      label: 'Requests',
+      data: requestsByStatus.value.map((r) => r.count),
+      backgroundColor: requestsByStatus.value.map((r) => STATUS_COLOR[r.status] ?? '#999999'),
+      borderRadius: 3,
+      maxBarThickness: 16,
+    },
+  ],
+}))
+
+const typeData = computed(() => ({
+  labels: requestsByType.value.map((r) => r.name),
+  datasets: [
+    {
+      label: 'Requests',
+      data: requestsByType.value.map((r) => r.count),
+      backgroundColor: '#f5a623',
+      borderRadius: 3,
+      maxBarThickness: 16,
+    },
+  ],
+}))
+
+const purokData = computed(() => ({
+  labels: residentsByPurok.value.map((r) => r.purok),
+  datasets: [
+    {
+      label: 'Residents',
+      data: residentsByPurok.value.map((r) => r.count),
+      backgroundColor: '#2e86de',
+      borderRadius: 3,
+      maxBarThickness: 16,
+    },
+  ],
+}))
+
+// ── Chart options ─────────────────────────────────────────────────────
+const baseOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { displayColors: false },
+  },
 }
 
-// ── Trend chart geometry ──────────────────────────────────────────────
-const trendWidth = computed(() => requestsOverTime.value.length * (14 + 4))
-const barWidth = 14
-const barGap = 4
+const trendOptions = {
+  ...baseOptions,
+  scales: {
+    x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
+    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef0f4' } },
+  },
+}
 
-function barHeight(count) {
-  const max = Math.max(1, ...requestsOverTime.value.map((d) => d.count))
-  return Math.round((count / max) * 60)
+const hBarOptions = {
+  ...baseOptions,
+  indexAxis: 'y',
+  scales: {
+    x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eef0f4' } },
+    y: { grid: { display: false } },
+  },
+}
+
+// Give horizontal charts ~30px per row so bars stay a consistent size
+function hBarHeight(rows) {
+  return `${Math.max(rows, 1) * 30 + 40}px`
 }
 
 async function load() {

@@ -1,11 +1,21 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+} from 'chart.js'
 import {
   getAppointmentReport,
   getAppointmentSummary,
   exportAppointmentReport,
 } from '@/api/adminAppointmentReport'
 import StatCard from '@/components/dashboard/StatCard.vue'
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
 // `cls` maps onto the same status-chip colors the other admin pages use.
 const STATUS = {
@@ -156,8 +166,12 @@ const statusItems = computed(() =>
 const by = (key) => summary.value.by_status?.[key] ?? 0
 
 // Shaped for the shared StatCard component.
+// Every card has a delta footer so all five render at the same height.
 const stats = computed(() => [
-  { label: 'Total appointments', value: summary.value.total, accentColor: '#0f1e3d' },
+  {
+    label: 'Total appointments', value: summary.value.total, accentColor: '#0f1e3d',
+    delta: 'In selected range', deltaIcon: 'mdi-calendar-range', deltaColor: '#888',
+  },
   {
     label: 'Completed', value: by('completed'), accentColor: '#27ae60',
     delta: `${summary.value.completion_rate}% of resolved`, deltaIcon: 'mdi-check', deltaColor: '#27ae60',
@@ -166,16 +180,15 @@ const stats = computed(() => [
     label: 'Upcoming', value: by('scheduled') + by('pending') + by('confirmed'), accentColor: '#2e86de',
     delta: 'Still to come', deltaIcon: 'mdi-calendar-outline', deltaColor: '#888',
   },
-  { label: 'Cancelled', value: by('cancelled'), accentColor: '#8a8f98' },
+  {
+    label: 'Cancelled', value: by('cancelled'), accentColor: '#8a8f98',
+    delta: 'Called off', deltaIcon: 'mdi-close-circle-outline', deltaColor: '#888',
+  },
   {
     label: 'No-shows', value: by('no_show'), accentColor: '#c0392b',
     delta: `${summary.value.no_show_rate}% of resolved`, deltaIcon: 'mdi-alert-circle-outline', deltaColor: '#c0392b',
   },
 ])
-
-const trend = computed(() => summary.value.daily.slice(-30))
-const trendMax = computed(() => Math.max(1, ...trend.value.map((d) => d.total)))
-const purposeMax = computed(() => Math.max(1, ...summary.value.by_purpose.map((p) => p.total)))
 
 // Accepts ISO strings or MySQL "YYYY-MM-DD HH:MM:SS" (Safari can't parse the latter directly).
 const toDate = (d) => new Date(/^\d{4}-\d{2}-\d{2} \d/.test(d) ? d.replace(' ', 'T') : d)
@@ -198,6 +211,85 @@ function fmtTime(t) {
 }
 
 const fmtHour = (h) => (h === null ? '—' : fmtTime(`${h}:00`).replace(':00', ''))
+
+/* ---------- charts (vue-chartjs) ---------- */
+const trend = computed(() => summary.value.daily.slice(-30))
+
+const trendData = computed(() => ({
+  labels: trend.value.map((d) => fmtShortDay(d.day)),
+  datasets: [
+    {
+      label: 'Appointments',
+      data: trend.value.map((d) => d.total),
+      backgroundColor: '#0f1e3d',
+      hoverBackgroundColor: '#f5a623',
+      borderRadius: { topLeft: 3, topRight: 3 },
+      maxBarThickness: 18,
+    },
+  ],
+}))
+
+const purposeData = computed(() => ({
+  labels: summary.value.by_purpose.map((p) => p.purpose),
+  datasets: [
+    {
+      label: 'Appointments',
+      data: summary.value.by_purpose.map((p) => p.total),
+      backgroundColor: '#f5a623',
+      borderRadius: 4,
+      maxBarThickness: 12,
+    },
+  ],
+}))
+
+const baseOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { displayColors: false },
+  },
+}
+
+const gridColor = '#f0ede3'
+const tickFont = { size: 11 }
+const tickColor = '#999'
+
+const trendOptions = {
+  ...baseOptions,
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: { color: tickColor, font: tickFont, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+    },
+    y: {
+      beginAtZero: true,
+      grid: { color: gridColor },
+      border: { display: false },
+      ticks: { color: tickColor, font: tickFont, precision: 0 },
+    },
+  },
+}
+
+const purposeOptions = {
+  ...baseOptions,
+  indexAxis: 'y',
+  scales: {
+    x: {
+      beginAtZero: true,
+      grid: { color: gridColor },
+      border: { display: false },
+      ticks: { color: tickColor, font: tickFont, precision: 0 },
+    },
+    y: {
+      grid: { display: false },
+      ticks: { color: '#666', font: { size: 12 }, autoSkip: false },
+    },
+  },
+}
+
+// ~30px per row so bars stay a consistent size however many purposes there are
+const purposeHeight = computed(() => `${Math.max(summary.value.by_purpose.length, 1) * 30 + 40}px`)
 </script>
 
 <template>
@@ -286,14 +378,14 @@ const fmtHour = (h) => (h === null ? '—' : fmtTime(`${h}:00`).replace(':00', '
 
     <!-- ─── Summary ──────────────────────────────────────────────── -->
     <v-row class="mb-2" aria-label="Summary">
-      <v-col v-for="s in stats" :key="s.label" cols="6" sm="4" lg>
-        <StatCard v-bind="s" />
+      <v-col v-for="s in stats" :key="s.label" cols="6" sm="4" lg class="d-flex">
+        <StatCard v-bind="s" class="stat-fill" />
       </v-col>
     </v-row>
 
     <!-- ─── Insights ─────────────────────────────────────────────── -->
     <v-row>
-      <v-col cols="12" lg="7">
+      <v-col cols="12" lg="7" class="d-flex">
         <v-card variant="flat" class="chart-card">
           <div class="d-flex align-baseline justify-space-between">
             <p class="chart-title">Appointments per day</p>
@@ -302,36 +394,21 @@ const fmtHour = (h) => (h === null ? '—' : fmtTime(`${h}:00`).replace(':00', '
             </span>
           </div>
 
-          <div v-if="trend.length" class="bars" role="img" aria-label="Appointments per day">
-            <div
-              v-for="d in trend"
-              :key="d.day"
-              class="bars__col"
-              :title="`${fmtShortDay(d.day)}: ${d.total}`"
-            >
-              <span class="bars__bar" :style="{ height: (d.total / trendMax) * 100 + '%' }" />
-            </div>
+          <div v-if="trend.length" class="chart-box" style="height: 200px">
+            <Bar :data="trendData" :options="trendOptions" />
           </div>
           <p v-else class="empty-text">No appointments in this range.</p>
-
-          <div v-if="trend.length" class="bars__axis">
-            <span>{{ fmtShortDay(trend[0].day) }}</span>
-            <span>{{ fmtShortDay(trend[trend.length - 1].day) }}</span>
-          </div>
         </v-card>
       </v-col>
 
-      <v-col cols="12" lg="5">
+      <v-col cols="12" lg="5" class="d-flex">
         <v-card variant="flat" class="chart-card">
           <p class="chart-title">By purpose</p>
-          <p v-if="!summary.by_purpose.length" class="empty-text">No appointments in this range.</p>
-          <div v-for="p in summary.by_purpose" :key="p.purpose" class="bar-row">
-            <span class="bar-label">{{ p.purpose }}</span>
-            <div class="bar-track">
-              <div class="bar-fill" :style="{ width: (p.total / purposeMax) * 100 + '%' }" />
-            </div>
-            <span class="bar-count">{{ p.total }}</span>
+
+          <div v-if="summary.by_purpose.length" class="chart-box" :style="{ height: purposeHeight }">
+            <Bar :data="purposeData" :options="purposeOptions" />
           </div>
+          <p v-else class="empty-text">No appointments in this range.</p>
         </v-card>
       </v-col>
     </v-row>
@@ -488,23 +565,17 @@ const fmtHour = (h) => (h === null ? '—' : fmtTime(`${h}:00`).replace(':00', '
 .filter-input :deep(.v-select__selection-text) { font-size: 12.5px; }
 .filter-input :deep(.v-field__input) { min-height: 36px; }
 
-/* Chart cards: same as the Reports page */
-.chart-card { background: #ffffff; border-radius: 10px; box-shadow: none; padding: 20px 22px; height: 100%; }
+/* Stat cards: stretch to the full height of the row so all five line up */
+.stat-fill { flex: 1 1 auto; width: 100%; height: 100%; }
+
+/* Chart cards: same as the Reports page, stretched to equal height per row */
+.chart-card { flex: 1 1 auto; background: #ffffff; border-radius: 10px; box-shadow: none; padding: 20px 22px; height: 100%; }
 .chart-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin: 0 0 16px; }
 .chart-meta { font-size: 11px; color: #999; }
 .empty-text { font-size: 12px; color: #999; text-align: center; padding: 24px 0; margin: 0; }
 
-.bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; }
-.bars__col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
-.bars__bar { display: block; width: 100%; min-height: 3px; background: #0f1e3d; border-radius: 3px 3px 0 0; }
-.bars__col:hover .bars__bar { background: #f5a623; }
-.bars__axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10.5px; color: #999; }
-
-.bar-row { display: grid; grid-template-columns: 120px 1fr 32px; align-items: center; gap: 10px; margin-bottom: 10px; }
-.bar-label { font-size: 12px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { height: 8px; background: #f0ede3; border-radius: 4px; overflow: hidden; }
-.bar-fill { height: 100%; background: #f5a623; border-radius: 4px; transition: width .3s ease; }
-.bar-count { font-size: 12px; color: #1a1a1a; font-weight: 500; text-align: right; }
+/* Chart.js needs a positioned, explicitly sized parent to size its canvas */
+.chart-box { position: relative; width: 100%; }
 
 /* Table */
 .table-head { font-size: 11px; font-weight: 500; color: #999; border-bottom: 1px solid #f0ede3; padding: 0 8px 8px; text-transform: none; letter-spacing: 0; text-align: left; }
