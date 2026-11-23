@@ -488,6 +488,26 @@ async function handleLogout() {
   whatever that file sets on the same elements.
 -->
 <style scoped>
+/* 4. Tighten the gap between the nav icon and its label.
+      Vuetify's default is 32px, set either as a margin on the icon
+      or as a width on the spacer, depending on the version. */
+.nav-drawer :deep(.v-list-item__prepend > .v-icon) {
+  margin-inline-end: 5px !important;
+}
+
+.nav-drawer :deep(.v-list-item__prepend > .v-icon ~ .v-list-item__spacer) {
+  width: 12px !important;
+}
+/* 5. Pull the child items closer to the parent labels.
+      Vuetify indents group children via --indent-padding
+      (default is about 56px for a nav list with prepend icons). */
+.nav-drawer :deep(.v-list-group__items) {
+  --indent-padding: 0px !important;
+}
+
+.nav-drawer :deep(.v-list-group__items .v-list-item) {
+  padding-inline-start: 40px !important; /* try 36–48px to line up with parent labels */
+}
 /* 1. Expanding a group makes the nav taller. If it overflows, a scrollbar
       appears, narrows the content ~15px and shifts everything sideways.
       Reserve the gutter and never allow horizontal scroll. */

@@ -44,6 +44,8 @@ export const adminRoutes = [
       // System
       { path: 'users', name: 'admin-staffadmins', component: () => import('@/views/admin/Staffadmins.vue') },
       { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/Settings.vue') },
+
+      { path: 'puroks', name: 'admin-puroks', component: () => import('@/views/admin/Puroks.vue') },
     ],
   },
 ]
