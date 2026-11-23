@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\AppointmentReportController;
 use App\Http\Controllers\Api\Admin\DemographicsReportController;
 use App\Http\Controllers\Api\Admin\HouseholdAdminController;
 use App\Http\Controllers\HouseholdController;
+use App\Models\Purok;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\BarangaySettingController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\VerifyController;
+use App\Http\Controllers\Api\Admin\PurokController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -160,5 +162,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/export', [AppointmentReportController::class, 'export']);
             Route::get('/', [AppointmentReportController::class, 'index']);
         });
+
+        Route::apiResource('puroks', PurokController::class)
+            ->parameters(['puroks' => 'purok:uuid']);
     });
 });
