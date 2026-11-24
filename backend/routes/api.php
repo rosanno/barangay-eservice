@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AppointmentReportController;
+use App\Http\Controllers\Api\Admin\CensusCampaignController;
 use App\Http\Controllers\Api\Admin\DemographicsReportController;
 use App\Http\Controllers\Api\Admin\HouseholdAdminController;
 use App\Http\Controllers\HouseholdController;
@@ -165,5 +166,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('puroks', PurokController::class)
             ->parameters(['puroks' => 'purok:uuid']);
+
+        Route::get('census-campaigns/options', [CensusCampaignController::class, 'options']);
+        Route::apiResource('census-campaigns', CensusCampaignController::class)
+            ->parameters(['census-campaigns' => 'campaign']);
+        Route::patch('census-campaigns/{campaign}/status', [CensusCampaignController::class, 'updateStatus']);
     });
 });
