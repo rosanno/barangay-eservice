@@ -46,6 +46,7 @@ export const adminRoutes = [
       { path: 'settings', name: 'admin-settings', component: () => import('@/views/admin/Settings.vue') },
 
       { path: 'puroks', name: 'admin-puroks', component: () => import('@/views/admin/Puroks.vue') },
+      { path: 'census/campaigns', name: 'admin-census-campaigns', component: () => import('@/views/admin/CensusCampaigns.vue') },
     ],
   },
 ]
