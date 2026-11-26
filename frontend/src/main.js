@@ -13,7 +13,8 @@ import { adminRoutes } from './router/admin-routes'
 import { documentRoutes } from './router/document-routes.js'
 import { residentRoutes } from './router/resident-routes.js'
 import { publicRoutes } from './router/public-routes.js'
-import { useAuthStore } from '@/store/auth'   // ← add this
+import { staffRoutes } from './router/staff-routes.js'
+import { useAuthStore } from '@/store/auth'
 import { i18n } from './i18n/index.js'
 
 import './styles/global.css';
@@ -22,6 +23,7 @@ const routes = [
   ...authRoutes,
   ...adminRoutes,
   ...residentRoutes,
+  ...staffRoutes, 
   ...documentRoutes,
   ...publicRoutes
 ]

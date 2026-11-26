@@ -1,8 +1,3 @@
-// routes/resident.js
-//
-// Add to your existing router/index.js routes array, alongside
-// authRoutes and adminRoutes.
-
 import ResidentLayout from '@/layouts/ResidentLayout.vue'
 import ResidentDashboard from '@/views/resident/Dashboard.vue'
 
@@ -22,9 +17,6 @@ export const residentRoutes = [
       {
         path: 'documents/request',
         name: 'documents-request',
-        // Move src/pages/documents/RequestDocumentPage.vue to
-        // src/views/resident/RequestDocument.vue to match this project's
-        // views/ convention, then point this import at it.
         component: () => import('@/pages/documents/RequestDocumentPage.vue'),
         meta: { title: 'Request a document', subtitle: 'Submit a new document request' },
       },

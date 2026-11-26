@@ -9,6 +9,10 @@ class CensusCampaignHousehold extends Model
     protected $fillable = ['census_campaign_id', 'household_id', 'enumerator_id', 'status', 'surveyed_at'];
     protected $casts = ['surveyed_at' => 'datetime'];
 
+    public function campaign()
+    {
+        return $this->belongsTo(CensusCampaign::class, 'census_campaign_id');
+    }
     public function household()
     {
         return $this->belongsTo(Household::class);
@@ -16,5 +20,9 @@ class CensusCampaignHousehold extends Model
     public function enumerator()
     {
         return $this->belongsTo(User::class, 'enumerator_id');
+    }
+    public function survey()
+    {
+        return $this->hasOne(HouseholdSurvey::class, 'census_campaign_household_id');
     }
 }

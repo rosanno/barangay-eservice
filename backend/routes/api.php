@@ -5,7 +5,6 @@ use App\Http\Controllers\Api\Admin\CensusCampaignController;
 use App\Http\Controllers\Api\Admin\DemographicsReportController;
 use App\Http\Controllers\Api\Admin\HouseholdAdminController;
 use App\Http\Controllers\HouseholdController;
-use App\Models\Purok;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\Admin\AppointmentAdminController;
 use App\Http\Controllers\Api\Admin\BarangaySettingController;
@@ -20,6 +19,7 @@ use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentRequestController;
 use App\Http\Controllers\Api\DocumentTypeController;
+use App\Http\Controllers\Api\HouseholdSurveyController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PreferenceController;
 use App\Http\Controllers\Api\ProfileController;
@@ -104,6 +104,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/', [HouseholdController::class, 'update']);
     });
 
+    // Household Survey (census data collection) — used by enumerators (staff)
+    // and verifiers (admin). Role access is enforced inside the controller
+    // via HasMiddleware, so residents get a 403.
+    Route::prefix('household-surveys')->group(function () {
+        Route::get('/options', [HouseholdSurveyController::class, 'options']);
+        Route::get('/residents', [HouseholdSurveyController::class, 'residents']);
+        Route::get('/', [HouseholdSurveyController::class, 'index']);
+        Route::post('/', [HouseholdSurveyController::class, 'store']);
+        Route::get('/{survey}', [HouseholdSurveyController::class, 'show'])->whereNumber('survey');
+        Route::put('/{survey}', [HouseholdSurveyController::class, 'update'])->whereNumber('survey');
+        Route::post('/{survey}/submit', [HouseholdSurveyController::class, 'submit'])->whereNumber('survey');
+        Route::get('/{survey}/comparison', [HouseholdSurveyController::class, 'comparison'])->whereNumber('survey');
+        Route::post('/{survey}/verify', [HouseholdSurveyController::class, 'verify'])->whereNumber('survey');
+    });
+
     /*
     |----------------------------------------------------------------------
     | Admin-only routes
@@ -166,6 +181,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('puroks', PurokController::class)
             ->parameters(['puroks' => 'purok:uuid']);
+
+        // Survey verification queue (review/approve/return reuse the shared /household-surveys endpoints)
+        Route::get('household-surveys/verification', [HouseholdSurveyController::class, 'queue']);
 
         Route::get('census-campaigns/options', [CensusCampaignController::class, 'options']);
         Route::apiResource('census-campaigns', CensusCampaignController::class)
