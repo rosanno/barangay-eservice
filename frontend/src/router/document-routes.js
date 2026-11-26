@@ -1,7 +1,3 @@
-// routes/documents.js
-//
-// Add to your existing router/index.js routes array.
-
 import RequestDocument from '@/pages/documents/RequestDocumentPage.vue'
 
 export const documentRoutes = [

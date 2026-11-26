@@ -47,6 +47,20 @@ export const adminRoutes = [
 
       { path: 'puroks', name: 'admin-puroks', component: () => import('@/views/admin/Puroks.vue') },
       { path: 'census/campaigns', name: 'admin-census-campaigns', component: () => import('@/views/admin/CensusCampaigns.vue') },
+
+      // Household survey verification
+      {
+        path: 'census/verification',
+        name: 'admin-census-verification',
+        component: () => import('@/views/admin/VerificationQueue.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'census/verification/:id(\\d+)',
+        name: 'admin-census-verification-survey',
+        component: () => import('@/views/staff/HouseholdSurveyForm.vue'),
+        meta: { roles: ['admin'], backTo: '/admin/census/verification' },
+      },
     ],
   },
 ]

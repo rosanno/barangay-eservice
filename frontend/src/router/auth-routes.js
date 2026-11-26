@@ -1,6 +1,3 @@
-// Add to your existing router/index.js routes array,
-// and apply the guard shown at the bottom.
-
 import Login from '@/views/auth/Login.vue'
 import Register from '@/views/auth/Register.vue'
 
