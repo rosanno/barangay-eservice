@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { searchResidents } from '@/services/householdSurveyService'
+import { searchResidents } from '@/api/householdSurveyApi'
 
 const props = defineProps({
   modelValue: Boolean,

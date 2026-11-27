@@ -60,9 +60,9 @@ async function open(r) {
     if (!r.survey) {
       starting.value = r.id
       const s = await startSurvey(r.id)
-      return router.push(`/staff/household-surveys/${s.id}`)
+      return router.push(`/staff/census-surveys/${s.id}`)
     }
-    router.push(`/staff/household-surveys/${r.survey.id}`)
+    router.push(`/staff/census-surveys/${r.survey.id}`)
   } catch (e) {
     toast.value = { show: true, text: e.response?.data?.message || 'Could not open survey.', color: 'error' }
   } finally {

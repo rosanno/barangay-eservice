@@ -99,11 +99,34 @@ class HouseholdSurveyController extends Controller implements HasMiddleware
             'first_name' => $r->first_name,
             'middle_name' => $r->middle_name,
             'last_name' => $r->last_name,
-            'suffix' => $r->suffix ?? null,
+            'suffix' => $this->scalar($r->suffix ?? null),
             'birthdate' => $r->birthdate ? Carbon::parse($r->birthdate)->format('Y-m-d') : null,
-            'sex' => $r->sex ?? null,
-            'civil_status' => $r->civil_status ?? null,
+            'sex' => $this->scalar($r->sex ?? null),
+            'civil_status' => $this->scalar($r->civil_status ?? null),
         ];
+    }
+
+    /** Unwrap enum-cast attributes (e.g. App\Enums\Sex) into plain strings. */
+    private function scalar($v)
+    {
+        if ($v instanceof \BackedEnum)
+            return $v->value;
+        if ($v instanceof \UnitEnum)
+            return $v->name;
+        return $v;
+    }
+
+    /** Convert a survey string back into the enum a Resident attribute is cast to (case-insensitive). */
+    private function enumFor(string $enum, ?string $value)
+    {
+        if ($value === null)
+            return null;
+        foreach ($enum::cases() as $case) {
+            $v = $case instanceof \BackedEnum ? (string) $case->value : $case->name;
+            if (strcasecmp($v, $value) === 0 || strcasecmp($case->name, $value) === 0)
+                return $case;
+        }
+        return null;
     }
 
     /* ---------- list (one row per target household) ---------- */
@@ -125,10 +148,16 @@ class HouseholdSurveyController extends Controller implements HasMiddleware
             ->when(!$verifier, fn($q) => $q->whereHas('campaign.enumerators', fn($e) => $e->where('users.id', $user->id)))
             ->when($request->campaign_id, fn($q, $v) => $q->where('census_campaign_id', $v))
             ->when($request->purok, fn($q, $v) => $q->whereHas('household', fn($h) => $h->where('purok', $v)))
-            ->when($request->status, function ($q, $v) {
-                $v === 'not_started'
-                    ? $q->whereDoesntHave('survey')
-                    : $q->whereHas('survey', fn($s) => $s->where('status', $v));
+            ->when($request->filled('status'), function ($q) use ($request) {
+                $status = $request->input('status');
+
+                if ($status === 'not_started') {
+                    $q->whereDoesntHave('survey');
+                } else {
+                    $q->whereHas('survey', function ($s) use ($status) {
+                        $s->where('status', $status);
+                    });
+                }
             })
             ->when($request->search, function ($q, $v) {
                 $q->where(fn($w) => $w
@@ -390,7 +419,7 @@ class HouseholdSurveyController extends Controller implements HasMiddleware
 
         DB::transaction(function () use ($survey, $data, $request) {
             $survey->verified_by = $request->user()->id;
-            $survey->verified_at = now();
+            $survey->verified_at = Carbon::parse(now()->toDateTimeString());
             $survey->verification_notes = $data['notes'] ?? null;
 
             if ($data['action'] === 'approve') {
@@ -420,7 +449,7 @@ class HouseholdSurveyController extends Controller implements HasMiddleware
     private function createResident($m): int
     {
         $r = new Resident();
-        $r->forceFill([
+        $values = [
             'first_name' => $m->first_name,
             'middle_name' => $m->middle_name,
             'last_name' => $m->last_name,
@@ -428,7 +457,17 @@ class HouseholdSurveyController extends Controller implements HasMiddleware
             'birthdate' => $m->birthdate,
             'sex' => $m->sex,
             'civil_status' => $m->civil_status,
-        ])->save();
+        ];
+
+        // If a column is cast to an enum on Resident, map our string onto the matching case.
+        foreach (['sex', 'civil_status'] as $f) {
+            $cast = $r->getCasts()[$f] ?? null;
+            if ($cast && enum_exists($cast)) {
+                $values[$f] = $this->enumFor($cast, $values[$f]);
+            }
+        }
+
+        $r->forceFill($values)->save();
         return $r->id;
     }
 }
