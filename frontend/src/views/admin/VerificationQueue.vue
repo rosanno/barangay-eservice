@@ -70,7 +70,7 @@ const statCards = computed(() => {
 const fmtDate = (d) => (d ? new Date(d).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }) : '—')
 const initials = (name) => (name ?? '').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
 
-const goSurvey = (row) => router.push(`/admin/household-surveys/${row.id}`)
+const goSurvey = (row) => router.push(`/admin/census/verification/${row.id}`)
 
 async function load() {
   loading.value = true

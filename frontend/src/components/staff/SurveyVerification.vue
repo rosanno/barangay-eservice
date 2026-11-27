@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getSurveyComparison, verifySurvey } from '@/services/householdSurveyService'
+import { getSurveyComparison, verifySurvey } from '@/api/householdSurveyApi'
 
 const props = defineProps({ survey: { type: Object, required: true } })
 const emit = defineEmits(['done'])

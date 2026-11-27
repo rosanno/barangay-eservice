@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth' // ASSUMPTION: adjust to your auth store
-import { getSurvey, saveSurvey, submitSurvey } from '@/services/householdSurveyService'
+import { useAuthStore } from '@/store/auth'
+import { getSurvey, saveSurvey, submitSurvey } from '@/api/householdSurveyApi'
 import { useSurveyOptions, surveyStatusMeta } from '@/composables/useSurveyOptions'
 import SurveyMemberDialog from '@/components/staff/SurveyMemberDialog.vue'
 import SurveySummary from '@/components/staff/SurveySummary.vue'
